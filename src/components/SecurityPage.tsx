@@ -24,6 +24,7 @@ const SecurityPage = () => {
         .limit(1)
 
       console.log('Supabase response:', { data, error })
+      console.log('Detailed error:', error ? JSON.stringify(error, null, 2) : 'No error')
 
       if (error) {
         console.error('Supabase error:', error)
