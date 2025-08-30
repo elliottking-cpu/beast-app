@@ -15,27 +15,29 @@ const SecurityPage = () => {
     setError('')
 
     try {
-      console.log('Starting security check...')
+      console.log('Starting security check via API route...')
       
-      // Check password against setup_configuration table
-      const { data, error } = await supabase
-        .from('setup_configuration')
-        .select('setup_password')
-        .limit(1)
+      // Use API route to bypass browser-to-Supabase connection issues
+      const response = await fetch('/api/security-check', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ password })
+      })
 
-      console.log('Supabase response:', { data, error })
-      console.log('Detailed error:', error ? JSON.stringify(error, null, 2) : 'No error')
+      console.log('API response status:', response.status)
+      
+      const result = await response.json()
+      console.log('API response data:', result)
 
-      if (error) {
-        console.error('Supabase error:', error)
-        throw error
-      }
-
-      if (data && data.length > 0 && data[0].setup_password === password) {
+      if (response.ok && result.success) {
         // Password correct - redirect to account creation
+        console.log('Password validation successful')
         navigate('/create-account')
       } else {
         // Password incorrect - redirect to landing page with error
+        console.log('Password validation failed')
         navigate('/', { state: { showError: true } })
       }
     } catch (err) {
