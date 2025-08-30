@@ -285,10 +285,33 @@ const LandingPage = () => {
             <div className="about-visual">
               <div className="company-showcase">
                 <h3>Trusted by Industry Leaders</h3>
+                <div className="company-stats">
+                  <div className="company-stat">
+                    <h4>10+</h4>
+                    <p>Years Experience</p>
+                  </div>
+                  <div className="company-stat">
+                    <h4>1000+</h4>
+                    <p>Properties Managed</p>
+                  </div>
+                  <div className="company-stat">
+                    <h4>50+</h4>
+                    <p>Team Members</p>
+                  </div>
+                </div>
                 <div className="company-logos">
-                  <div className="company-logo">The Septics Group</div>
-                  <div className="company-logo">Yorkshire Septics</div>
-                  <div className="company-logo">Your Company Next</div>
+                  <div className="company-logo">
+                    <div className="logo-placeholder">TSG</div>
+                    <span>The Septics Group</span>
+                  </div>
+                  <div className="company-logo">
+                    <div className="logo-placeholder">YS</div>
+                    <span>Yorkshire Septics</span>
+                  </div>
+                  <div className="company-logo coming-soon">
+                    <div className="logo-placeholder">?</div>
+                    <span>Your Company Next</span>
+                  </div>
                 </div>
               </div>
             </div>
@@ -419,24 +442,20 @@ const LandingPage = () => {
                 </div>
               </div>
             </div>
-            <div className="contact-form">
+            <div className="contact-cta">
               <h3>Get Started Today</h3>
-              <form className="demo-form">
-                <input type="text" placeholder="Company Name" />
-                <input type="email" placeholder="Work Email" />
-                <input type="tel" placeholder="Phone Number" />
-                <select>
-                  <option>Business Size</option>
-                  <option>1-5 employees</option>
-                  <option>6-20 employees</option>
-                  <option>21-50 employees</option>
-                  <option>50+ employees</option>
-                </select>
-                <textarea placeholder="Tell us about your business needs..."></textarea>
-                <button type="submit" className="form-submit-btn">
-                  Request Demo
+              <p>Ready to transform your field service operations?</p>
+              <div className="contact-buttons">
+                <button className="contact-primary-btn" onClick={handleCreateAccount}>
+                  Start Free Trial
                 </button>
-              </form>
+                <button className="contact-secondary-btn" onClick={() => navigate('/login')}>
+                  Sign In
+                </button>
+              </div>
+              <p className="contact-note">
+                No credit card required • 30-day free trial • Setup in minutes
+              </p>
             </div>
           </div>
         </div>
