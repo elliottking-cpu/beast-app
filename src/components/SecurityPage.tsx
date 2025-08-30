@@ -15,13 +15,18 @@ const SecurityPage = () => {
     setError('')
 
     try {
+      console.log('Starting security check...')
+      
       // Check password against setup_configuration table
       const { data, error } = await supabase
         .from('setup_configuration')
         .select('setup_password')
         .limit(1)
 
+      console.log('Supabase response:', { data, error })
+
       if (error) {
+        console.error('Supabase error:', error)
         throw error
       }
 
