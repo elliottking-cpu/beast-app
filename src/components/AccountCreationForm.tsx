@@ -96,7 +96,7 @@ const AccountCreationForm = () => {
     setErrors([])
 
     try {
-      // Check for existing work email in our users table
+      // Basic validation - just check for duplicate emails/company IDs without creating anything
       const { data: existingUser, error: userCheckError } = await supabase
         .from('users')
         .select('email')
@@ -109,8 +109,6 @@ const AccountCreationForm = () => {
         setErrors(['User already exists with this work email address'])
         return
       }
-
-      // Note: We'll rely on Supabase Auth signup to catch duplicate emails
 
       // Check for existing company ID
       const { data: existingCompany, error: companyCheckError } = await supabase
@@ -126,82 +124,20 @@ const AccountCreationForm = () => {
         return
       }
 
-      // Create Supabase Auth user
-      const { data: authData, error: authError } = await supabase.auth.signUp({
-        email: formData.workEmail,
-        password: formData.password,
-        options: {
-          emailRedirectTo: undefined // Don't send confirmation email
-        }
-      })
-
-      if (authError) throw authError
-
-      if (!authData.user) {
-        throw new Error('Failed to create authentication user')
+      // Store ALL form data in localStorage for final processing
+      const accountCreationData = {
+        formData: formData,
+        timestamp: new Date().toISOString()
       }
+      
+      console.log('Storing account creation data for final processing:', accountCreationData)
+      localStorage.setItem('accountCreationData', JSON.stringify(accountCreationData))
 
-      // Create business unit
-      const { data: businessUnit, error: businessUnitError } = await supabase
-        .from('business_units')
-        .insert({
-          name: formData.groupCompanyName,
-          business_unit_type_id: '716008fd-932c-447f-abc2-3b1e9305bb59', // GROUP_MANAGEMENT
-          company_registration_number: formData.companyId,
-          address: `${formData.homeAddress1}${formData.homeAddress2 ? ', ' + formData.homeAddress2 : ''}${formData.homeAddressTown ? ', ' + formData.homeAddressTown : ''}${formData.homeAddressCity ? ', ' + formData.homeAddressCity : ''}${formData.homeAddressPostcode ? ', ' + formData.homeAddressPostcode : ''}`,
-          email: formData.workEmail,
-          phone: formData.workPhone
-        })
-        .select()
-        .single()
-
-      if (businessUnitError) throw businessUnitError
-
-      // Create user with CEO role (linked to Supabase Auth user)
-      const { data: user, error: userError } = await supabase
-        .from('users')
-        .insert({
-          id: authData.user.id, // Use Supabase Auth user ID
-          email: formData.workEmail,
-          first_name: formData.firstName,
-          last_name: formData.lastName,
-          user_type_id: '771e399d-be01-427f-bfd7-5f7019c61971', // EMPLOYEE
-          job_role_id: '98711fa7-1e46-4c01-a74e-18423130fb10', // CEO
-          business_unit_id: businessUnit.id
-        })
-        .select()
-        .single()
-
-      if (userError) throw userError
-
-      // Auto-assign Executive department to GROUP_MANAGEMENT business unit
-      const { data: executiveDept, error: deptError } = await supabase
-        .from('departments')
-        .select('id')
-        .eq('name', 'Executive')
-        .single()
-
-      if (deptError) throw deptError
-
-      const { error: deptAssignError } = await supabase
-        .from('business_unit_departments')
-        .insert({
-          business_unit_id: businessUnit.id,
-          department_id: executiveDept.id,
-          manager_user_id: user.id
-        })
-
-      if (deptAssignError) throw deptAssignError
-
-      // Store user and business unit info for company setup page
-      localStorage.setItem('newAccountData', JSON.stringify({
-        userId: user.id,
-        businessUnitId: businessUnit.id,
-        companyName: formData.groupCompanyName
-      }))
-
-      // Redirect to company setup
-      navigate('/company-setup')
+      // Redirect to company setup without creating any database records yet
+      console.log('Proceeding to company setup (no database records created yet)...')
+      setTimeout(() => {
+        navigate('/company-setup')
+      }, 100)
 
     } catch (error) {
       console.error('Account creation error:', error)
