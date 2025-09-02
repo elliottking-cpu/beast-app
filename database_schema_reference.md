@@ -3,7 +3,7 @@
 ## Overview
 This document tracks the complete database schema for The Septics Group Field Service Management application. It will be updated after every schema modification to maintain a complete reference.
 
-## Current Tables (as of latest update) - 67 Tables Total
+## Current Tables (as of latest update) - 69 Tables Total
 
 ### 1. **business_unit_types**
 **Purpose**: Defines the types of business units in the system (e.g., Regional Service, Online Store, Group Management, Single Business)
@@ -1012,6 +1012,79 @@ This document tracks the complete database schema for The Septics Group Field Se
 
 **Relationships**:
 - References: `business_units.id`, `contract_templates.id`
+
+### 62. **operators_licenses**
+**Purpose**: Professional HGV operators licenses for fleet management and compliance
+- `id` (UUID, PK) - Primary key
+- `business_unit_id` (UUID, FK) - References business_units
+- `license_name` (TEXT) - License name (e.g., "The Septics Group - Operators License")
+- `license_number` (TEXT, UNIQUE) - Official license number
+- `transport_manager_name` (TEXT) - Name of designated transport manager
+- `transport_manager_contact` (TEXT, NULLABLE) - Transport manager phone number
+- `transport_manager_email` (TEXT, NULLABLE) - Transport manager email
+- `max_hgv_vehicles` (INTEGER, DEFAULT: 0) - Maximum HGV vehicles allowed on license
+- `current_hgv_count` (INTEGER, DEFAULT: 0) - Current number of HGVs assigned
+- `issue_date` (DATE, NULLABLE) - License issue date
+- `expiry_date` (DATE, NULLABLE) - License expiry date
+- `issuing_authority` (TEXT, DEFAULT: 'DVSA') - Issuing authority
+- `license_status` (TEXT, DEFAULT: 'ACTIVE') - Status (ACTIVE, SUSPENDED, EXPIRED, REVOKED)
+- `compliance_notes` (TEXT, NULLABLE) - Compliance notes
+- `is_active` (BOOLEAN, DEFAULT: true) - Whether this license is active
+- `created_at` (TIMESTAMPTZ, DEFAULT: now()) - Creation timestamp
+- `updated_at` (TIMESTAMPTZ, DEFAULT: now()) - Last update timestamp
+
+**Relationships**:
+- References: `business_units.id`
+- Referenced by: `tanker_equipment.operators_license_id`
+
+### 63. **tanker_equipment** (Updated with Professional HGV Fields)
+**Purpose**: Professional HGV tanker equipment with comprehensive fleet management data
+- `id` (UUID, PK) - Primary key
+- `business_unit_id` (UUID, FK) - References business_units
+- `equipment_name` (TEXT) - Equipment name/identifier
+- `registration_number` (TEXT, NULLABLE) - Vehicle registration number
+
+**Tank-Specific Specifications**:
+- `waste_tank_capacity_litres` (INTEGER, NULLABLE) - Waste tank capacity in litres
+- `has_washdown_facility` (BOOLEAN, DEFAULT: false) - Has washdown capability
+- `clean_water_capacity_litres` (INTEGER, NULLABLE) - Clean water tank capacity
+- `washdown_pressure_psi` (INTEGER, NULLABLE) - Washdown pressure rating
+
+**HGV Vehicle Specifications**:
+- `vehicle_tare_weight_kg` (INTEGER, NULLABLE) - Empty vehicle weight (legal requirement)
+- `max_gross_weight_kg` (INTEGER, NULLABLE) - Maximum loaded weight (legal limit)
+- `number_of_axles` (INTEGER, NULLABLE) - Number of axles (affects licensing)
+- `number_of_seats` (INTEGER, NULLABLE) - Driver + passenger capacity
+- `vehicle_width_meters` (DECIMAL(4,2), NULLABLE) - Vehicle width for route restrictions
+- `vehicle_height_meters` (DECIMAL(4,2), NULLABLE) - Vehicle height for bridge clearances
+- `max_hose_capacity_meters` (INTEGER, NULLABLE) - Maximum hose storage capacity
+
+**Licensing & Compliance**:
+- `operators_license_id` (UUID, FK, NULLABLE) - References operators_licenses
+- `required_license_type` (TEXT, NULLABLE) - Required HGV license (Class 1/2)
+- `last_8_weekly_inspection` (DATE, NULLABLE) - Last 8-weekly HGV inspection
+- `next_8_weekly_inspection` (DATE, NULLABLE) - Next 8-weekly inspection due
+
+**Insurance & Maintenance**:
+- `insurance_company` (TEXT, NULLABLE) - Insurance provider
+- `insurance_policy_number` (TEXT, NULLABLE) - Policy number
+- `insurance_expiry_date` (DATE, NULLABLE) - Insurance expiry
+- `mot_expiry_date` (DATE, NULLABLE) - MOT expiry date
+- `service_due_date` (DATE, NULLABLE) - Next service due
+- `last_service_date` (DATE, NULLABLE) - Last service date
+
+**Financial & Operational**:
+- `assigned_region` (TEXT, NULLABLE) - Assigned operational region
+- `purchase_date` (DATE, NULLABLE) - Purchase date
+- `purchase_cost` (NUMERIC, NULLABLE) - Purchase cost
+- `current_value` (NUMERIC, NULLABLE) - Current asset value
+- `is_operational` (BOOLEAN, DEFAULT: true) - Whether vehicle is operational
+- `is_active` (BOOLEAN, DEFAULT: true) - Whether this record is active
+- `created_at` (TIMESTAMPTZ, DEFAULT: now()) - Creation timestamp
+- `updated_at` (TIMESTAMPTZ, DEFAULT: now()) - Last update timestamp
+
+**Relationships**:
+- References: `business_units.id`, `operators_licenses.id`
 
 ## Notes and Observations
 

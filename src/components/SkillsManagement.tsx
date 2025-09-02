@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { supabase } from '../lib/supabase'
-import DashboardLayout from './DashboardLayout'
+
 import './SkillsManagement.css'
 
 interface SkillCategory {
@@ -164,17 +164,15 @@ const SkillsManagement = () => {
 
   if (isLoading) {
     return (
-      <DashboardLayout currentPage="Skills Management">
-        <div className="skills-loading">
-          <div className="loading-spinner"></div>
-          <p>Loading skills data...</p>
-        </div>
-      </DashboardLayout>
+      <div className="skills-loading">
+        <div className="loading-spinner"></div>
+        <p>Loading skills data...</p>
+      </div>
     )
   }
 
   return (
-    <DashboardLayout currentPage="Skills Management">
+    <>
       <div className="skills-management">
         <div className="skills-header">
           <div className="skills-title-section">
@@ -519,7 +517,7 @@ const SkillsManagement = () => {
           </>
         )}
       </div>
-    </DashboardLayout>
+    </>
   )
 }
 

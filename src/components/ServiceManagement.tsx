@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { supabase } from '../lib/supabase'
-import DashboardLayout from './DashboardLayout'
+
 import './ServiceManagement.css'
 
 interface ServiceCategory {
@@ -150,17 +150,15 @@ const ServiceManagement = () => {
 
   if (isLoading) {
     return (
-      <DashboardLayout currentPage="Services">
-        <div className="services-loading">
-          <div className="loading-spinner"></div>
-          <p>Loading services data...</p>
-        </div>
-      </DashboardLayout>
+      <div className="services-loading">
+        <div className="loading-spinner"></div>
+        <p>Loading services data...</p>
+      </div>
     )
   }
 
   return (
-    <DashboardLayout currentPage="Services">
+    <>
       <div className="service-management">
         <div className="service-header">
           <div className="service-title-section">
@@ -483,7 +481,7 @@ const ServiceManagement = () => {
           </>
         )}
       </div>
-    </DashboardLayout>
+    </>
   )
 }
 

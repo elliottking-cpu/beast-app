@@ -1,5 +1,5 @@
-import { useState, useEffect, ReactNode } from 'react'
-import { useParams, useNavigate } from 'react-router-dom'
+import { useState, useEffect } from 'react'
+import { useParams, useNavigate, Link, Outlet } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import './Dashboard.css'
 
@@ -26,17 +26,24 @@ interface User {
 }
 
 interface DashboardLayoutProps {
-  children: ReactNode
   currentPage?: string
 }
 
-const DashboardLayout = ({ children, currentPage = 'Dashboard' }: DashboardLayoutProps) => {
+const DashboardLayout = ({ currentPage = 'Dashboard' }: DashboardLayoutProps) => {
   const { companyName } = useParams<{ companyName: string }>()
   const navigate = useNavigate()
   const [user, setUser] = useState<User | null>(null)
   const [businessUnit, setBusinessUnit] = useState<BusinessUnit | null>(null)
   const [departments, setDepartments] = useState<Department[]>([])
   const [childBusinessUnits, setChildBusinessUnits] = useState<BusinessUnit[]>([])
+  const [childBusinessUnitDepartments, setChildBusinessUnitDepartments] = useState<{[key: string]: Department[]}>({})
+  const [expandedBusinessUnits, setExpandedBusinessUnits] = useState<{[key: string]: boolean}>({})
+  const [expandedSections, setExpandedSections] = useState<{[key: string]: boolean}>({
+    'main-departments': true, // Main business unit departments expanded by default
+    'regional-units': true,   // Regional business units section expanded by default
+    'account-section': false  // Account section collapsed by default
+  })
+  const [expandedDepartments, setExpandedDepartments] = useState<{[key: string]: boolean}>({})
   const [isLoading, setIsLoading] = useState(true)
   const [isSideMenuCollapsed, setIsSideMenuCollapsed] = useState(false)
   const [showAIModal, setShowAIModal] = useState(false)
@@ -46,6 +53,7 @@ const DashboardLayout = ({ children, currentPage = 'Dashboard' }: DashboardLayou
   const [searchQuery, setSearchQuery] = useState('')
 
   useEffect(() => {
+    console.log('DashboardLayout mounting, companyName:', companyName)
     loadDashboardData()
   }, [companyName])
 
@@ -128,6 +136,41 @@ const DashboardLayout = ({ children, currentPage = 'Dashboard' }: DashboardLayou
 
         if (childUnitsError) throw childUnitsError
         setChildBusinessUnits(childUnits || [])
+
+        // Load departments for each child business unit
+        const departmentsByUnit: {[key: string]: Department[]} = {}
+        
+        for (const unit of childUnits || []) {
+          const { data: unitDepartments, error: unitDeptError } = await supabase
+            .from('business_unit_departments')
+            .select(`
+              departments (
+                id,
+                name,
+                menu_icon,
+                menu_path
+              )
+            `)
+            .eq('business_unit_id', unit.id)
+            .eq('is_active', true)
+
+          if (unitDeptError) {
+            console.error(`Error loading departments for ${unit.name}:`, unitDeptError)
+            continue
+          }
+
+          const deptList = unitDepartments
+            ?.map(item => item.departments)
+            .filter(Boolean)
+            .flat() as Department[] || []
+
+          departmentsByUnit[unit.id] = deptList
+        }
+
+        setChildBusinessUnitDepartments(departmentsByUnit)
+
+        // All regional units start collapsed by default for a cleaner menu
+        // Users can expand them as needed
       }
 
       setUser({
@@ -140,7 +183,9 @@ const DashboardLayout = ({ children, currentPage = 'Dashboard' }: DashboardLayou
 
     } catch (error) {
       console.error('Error loading dashboard:', error)
-      navigate('/login')
+      console.error('Error details:', JSON.stringify(error, null, 2))
+      // Don't navigate away immediately, let's see what the error is
+      setIsLoading(false)
     } finally {
       setIsLoading(false)
     }
@@ -149,6 +194,29 @@ const DashboardLayout = ({ children, currentPage = 'Dashboard' }: DashboardLayou
   const toggleSideMenu = () => {
     setIsSideMenuCollapsed(!isSideMenuCollapsed)
   }
+
+  const toggleBusinessUnitExpansion = (businessUnitId: string) => {
+    setExpandedBusinessUnits(prev => ({
+      ...prev,
+      [businessUnitId]: !prev[businessUnitId]
+    }))
+  }
+
+  const toggleSectionExpansion = (sectionId: string) => {
+    setExpandedSections(prev => ({
+      ...prev,
+      [sectionId]: !prev[sectionId]
+    }))
+  }
+
+  const toggleDepartmentExpansion = (departmentId: string) => {
+    setExpandedDepartments(prev => ({
+      ...prev,
+      [departmentId]: !prev[departmentId]
+    }))
+  }
+
+
 
   const handleLogout = async () => {
     try {
@@ -198,16 +266,16 @@ const DashboardLayout = ({ children, currentPage = 'Dashboard' }: DashboardLayou
         {/* Sidebar Header */}
         <div className="sidebar-header">
           <div className="company-brand">
-            {businessUnit.logo_url ? (
+            {businessUnit?.logo_url ? (
               <img src={businessUnit.logo_url} alt="Company Logo" className="company-logo" />
             ) : (
               <div className="company-logo-placeholder">
-                {businessUnit.name.split(' ').map(word => word[0]).join('').slice(0, 2)}
+                {businessUnit?.name?.split(' ').map(word => word[0]).join('').slice(0, 2) || 'BU'}
               </div>
             )}
             {!isSideMenuCollapsed && (
               <div className="company-info">
-                <h3 className="company-name">{businessUnit.name}</h3>
+                <h3 className="company-name">{businessUnit?.name || 'Loading...'}</h3>
                 <span className="company-type">Group Management</span>
               </div>
             )}
@@ -227,13 +295,30 @@ const DashboardLayout = ({ children, currentPage = 'Dashboard' }: DashboardLayou
         <nav className="sidebar-nav">
           {/* Group Company Section */}
           <div className="nav-section">
-            <div className="nav-section-header">
-              <span className="nav-section-title">{businessUnit.name}</span>
-            </div>
-            <ul className="nav-list">
+            <button 
+              className="nav-section-header nav-section-toggle"
+              onClick={() => toggleSectionExpansion('main-departments')}
+            >
+              <span className="nav-section-title">{businessUnit?.name || 'Loading...'}</span>
+              {!isSideMenuCollapsed && (
+                <svg 
+                  className={`nav-expand-icon ${expandedSections['main-departments'] ? 'expanded' : ''}`} 
+                  width="16" 
+                  height="16" 
+                  viewBox="0 0 24 24" 
+                  fill="none" 
+                  stroke="currentColor" 
+                  strokeWidth="2"
+                >
+                  <path d="M9 18l6-6-6-6" />
+                </svg>
+              )}
+            </button>
+            {(!isSideMenuCollapsed && expandedSections['main-departments']) && (
+              <ul className="nav-list">
               <li className={`nav-item ${currentPage === 'Dashboard' ? 'active' : ''}`}>
                 <div className="nav-link" onClick={() => {
-                  const companySlug = businessUnit.name.toLowerCase().replace(/\s+/g, '-')
+                  const companySlug = businessUnit?.name?.toLowerCase().replace(/\s+/g, '-') || 'company'
                   navigate(`/${companySlug}/dashboard`)
                 }}>
                   <svg className="nav-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -243,69 +328,156 @@ const DashboardLayout = ({ children, currentPage = 'Dashboard' }: DashboardLayou
                   {!isSideMenuCollapsed && <span className="nav-text">Dashboard</span>}
                 </div>
               </li>
-              {departments.map(dept => (
-                <li key={dept.id} className="nav-item">
-                  <div className="nav-link">
-                    <svg className="nav-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                      {dept.name === 'Executive' ? (
-                        <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
-                      ) : (
-                        <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z" />
+              {departments.map(dept => {
+                const deptKey = dept.name.toLowerCase().replace(/\s+/g, '-')
+                const isExpanded = expandedDepartments[deptKey]
+                
+                return (
+                  <li key={dept.id} className="nav-item">
+                    <button 
+                      className="nav-link nav-group-header"
+                      onClick={() => toggleDepartmentExpansion(deptKey)}
+                    >
+                      <svg className="nav-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                        {dept.name === 'Executive' && <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />}
+                        {dept.name === 'Business Management' && <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z" />}
+                        {dept.name === 'HR' && <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" />}
+                        {dept.name === 'HR' && <circle cx="9" cy="7" r="4" />}
+                        {dept.name === 'Sales' && <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />}
+                        {dept.name === 'Transport' && <path d="M14 16H9m10 0h3m-3 0l3-3m-3 3l3 3M5 16H2m3 0L2 13m3 3l-3 3" />}
+                        {dept.name === 'Surveying' && <path d="M9 11a3 3 0 1 0 6 0a3 3 0 0 0 -6 0" />}
+                        {dept.name === 'Construction' && <path d="M7 21h10l2-2V8l-2-2H7L5 8v11l2 2z" />}
+                        {dept.name === 'Accounts' && <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />}
+                        {!['Executive', 'Business Management', 'HR', 'Sales', 'Transport', 'Surveying', 'Construction', 'Accounts'].includes(dept.name) && 
+                          <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z" />
+                        }
+                      </svg>
+                      {!isSideMenuCollapsed && (
+                        <>
+                          <span className="nav-text">{dept.name}</span>
+                          <svg 
+                            className={`nav-expand-icon ${isExpanded ? 'expanded' : ''}`} 
+                            width="16" 
+                            height="16" 
+                            viewBox="0 0 24 24" 
+                            fill="none" 
+                            stroke="currentColor" 
+                            strokeWidth="2"
+                          >
+                            <path d="M9 18l6-6-6-6" />
+                          </svg>
+                        </>
                       )}
-                    </svg>
-                    {!isSideMenuCollapsed && <span className="nav-text">{dept.name}</span>}
-                  </div>
-                  {dept.name === 'Executive' && !isSideMenuCollapsed && (
-                    <ul className="nav-submenu">
-                      <li className="nav-subitem">
-                        <div className={`nav-link ${currentPage === 'Equipment' ? 'active' : ''}`} onClick={() => {
-                          const companySlug = businessUnit?.name.toLowerCase().replace(/\s+/g, '-')
-                          navigate(`/${companySlug}/equipment`)
-                        }}>
-                          <svg className="nav-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                            <circle cx="12" cy="12" r="3" />
-                            <path d="M12 1v6m0 6v6" />
-                            <path d="M21 12h-6m-6 0H3" />
-                          </svg>
-                          <span className="nav-text">Equipment Management</span>
-                        </div>
-                      </li>
-                      <li className="nav-subitem">
-                        <div className={`nav-link ${currentPage === 'Skills Management' ? 'active' : ''}`} onClick={() => {
-                          const companySlug = businessUnit?.name.toLowerCase().replace(/\s+/g, '-')
-                          navigate(`/${companySlug}/skills`)
-                        }}>
-                          <svg className="nav-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                            <path d="M22 10v6M2 10l10-5 10 5-10 5z" />
-                            <path d="M6 12v5c3 3 9 3 12 0v-5" />
-                          </svg>
-                          <span className="nav-text">Skills & Certifications</span>
-                        </div>
-                      </li>
-                      <li className="nav-subitem">
-                        <div className={`nav-link ${currentPage === 'Services' ? 'active' : ''}`} onClick={() => {
-                          const companySlug = businessUnit?.name.toLowerCase().replace(/\s+/g, '-')
-                          navigate(`/${companySlug}/services`)
-                        }}>
-                          <svg className="nav-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                            <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
-                          </svg>
-                          <span className="nav-text">Service Catalog</span>
-                        </div>
-                      </li>
-                    </ul>
-                  )}
-                </li>
-              ))}
-            </ul>
+                    </button>
+                    
+                    {!isSideMenuCollapsed && isExpanded && (
+                      <ul className="nav-sublist">
+                        {/* Department Dashboard */}
+                        <li className="nav-subitem">
+                          <Link to={`/${businessUnit?.name?.toLowerCase().replace(/\s+/g, '-') || 'company'}${dept.menu_path}`} className="nav-link">
+                            <svg className="nav-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                              <rect x="3" y="3" width="18" height="18" rx="2" ry="2" />
+                              <line x1="9" y1="9" x2="15" y2="9" />
+                              <line x1="9" y1="15" x2="15" y2="15" />
+                            </svg>
+                            <span className="nav-text">Dashboard</span>
+                          </Link>
+                        </li>
+
+                        {/* Department-specific pages */}
+                        {dept.name === 'Executive' && (
+                          <>
+                            <li className="nav-subitem">
+                              <Link to={`/${businessUnit?.name?.toLowerCase().replace(/\s+/g, '-') || 'company'}/equipment`} className="nav-link">
+                                <svg className="nav-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                  <circle cx="12" cy="12" r="3" />
+                                  <path d="M12 1v6m0 6v6" />
+                                  <path d="m21 12-6 0m-6 0-6 0" />
+                                </svg>
+                                <span className="nav-text">Equipment Management</span>
+                              </Link>
+                            </li>
+                            <li className="nav-subitem">
+                              <Link to={`/${businessUnit?.name?.toLowerCase().replace(/\s+/g, '-') || 'company'}/skills`} className="nav-link">
+                                <svg className="nav-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                  <path d="M22 10v6M2 10l10-5 10 5-10 5z" />
+                                  <path d="M6 12v5c3 3 9 3 12 0v-5" />
+                                </svg>
+                                <span className="nav-text">Skills & Certifications</span>
+                              </Link>
+                            </li>
+                            <li className="nav-subitem">
+                              <Link to={`/${businessUnit?.name?.toLowerCase().replace(/\s+/g, '-') || 'company'}/services`} className="nav-link">
+                                <svg className="nav-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                  <circle cx="12" cy="12" r="3" />
+                                  <path d="M12 1v6m0 6v6" />
+                                  <path d="m21 12-6 0m-6 0-6 0" />
+                                </svg>
+                                <span className="nav-text">Service Catalog</span>
+                              </Link>
+                            </li>
+                          </>
+                        )}
+
+                        {dept.name === 'Business Management' && (
+                          <li className="nav-subitem">
+                            <Link to={`/${businessUnit?.name?.toLowerCase().replace(/\s+/g, '-') || 'company'}/business-management/employees`} className="nav-link">
+                              <svg className="nav-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" />
+                                <circle cx="9" cy="7" r="4" />
+                                <line x1="19" y1="8" x2="19" y2="14" />
+                                <line x1="22" y1="11" x2="16" y2="11" />
+                              </svg>
+                              <span className="nav-text">Employee Management</span>
+                            </Link>
+                          </li>
+                        )}
+
+                        {dept.name === 'HR' && (
+                          <li className="nav-subitem">
+                            <Link to={`/${businessUnit?.name?.toLowerCase().replace(/\s+/g, '-') || 'company'}/hr/employees`} className="nav-link">
+                              <svg className="nav-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" />
+                                <circle cx="9" cy="7" r="4" />
+                                <line x1="19" y1="8" x2="19" y2="14" />
+                                <line x1="22" y1="11" x2="16" y2="11" />
+                              </svg>
+                              <span className="nav-text">Employee Management</span>
+                            </Link>
+                          </li>
+                        )}
+                      </ul>
+                    )}
+                  </li>
+                )
+              })}
+              </ul>
+            )}
           </div>
 
           {/* Regional Business Units Section */}
           <div className="nav-section">
-            <div className="nav-section-header">
+            <button 
+              className="nav-section-header nav-section-toggle"
+              onClick={() => toggleSectionExpansion('regional-units')}
+            >
               <span className="nav-section-title">Regional Business Units</span>
-            </div>
-            <ul className="nav-list">
+              {!isSideMenuCollapsed && (
+                <svg 
+                  className={`nav-expand-icon ${expandedSections['regional-units'] ? 'expanded' : ''}`} 
+                  width="16" 
+                  height="16" 
+                  viewBox="0 0 24 24" 
+                  fill="none" 
+                  stroke="currentColor" 
+                  strokeWidth="2"
+                >
+                  <path d="M9 18l6-6-6-6" />
+                </svg>
+              )}
+            </button>
+            {(!isSideMenuCollapsed && expandedSections['regional-units']) && (
+              <ul className="nav-list">
               {childBusinessUnits.length === 0 ? (
                 <li className="nav-item-empty">
                   {!isSideMenuCollapsed && (
@@ -313,28 +485,88 @@ const DashboardLayout = ({ children, currentPage = 'Dashboard' }: DashboardLayou
                   )}
                 </li>
               ) : (
-                childBusinessUnits.map(unit => (
-                  <li key={unit.id} className="nav-item">
-                    <div className="nav-link">
-                      <svg className="nav-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                        <path d="M3 21h18" />
-                        <path d="M5 21V7l8-4v18" />
-                        <path d="M19 21V11l-6-4" />
-                      </svg>
-                      {!isSideMenuCollapsed && <span className="nav-text">{unit.name}</span>}
-                    </div>
-                  </li>
-                ))
+                childBusinessUnits.map(unit => {
+                  const isExpanded = expandedBusinessUnits[unit.id] || false
+                  const hasDepartments = childBusinessUnitDepartments[unit.id] && childBusinessUnitDepartments[unit.id].length > 0
+                  
+                  return (
+                    <li key={unit.id} className="nav-item nav-group">
+                      <button 
+                        className="nav-link nav-group-header"
+                        onClick={() => toggleBusinessUnitExpansion(unit.id)}
+                        disabled={!hasDepartments}
+                      >
+                        <svg className="nav-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                          <path d="M3 21h18" />
+                          <path d="M5 21V7l8-4v18" />
+                          <path d="M19 21V11l-6-4" />
+                        </svg>
+                        {!isSideMenuCollapsed && (
+                          <>
+                            <span className="nav-text">{unit.name}</span>
+                            {hasDepartments && (
+                              <svg 
+                                className={`nav-expand-icon ${isExpanded ? 'expanded' : ''}`} 
+                                width="16" 
+                                height="16" 
+                                viewBox="0 0 24 24" 
+                                fill="none" 
+                                stroke="currentColor" 
+                                strokeWidth="2"
+                              >
+                                <path d="M9 18l6-6-6-6" />
+                              </svg>
+                            )}
+                          </>
+                        )}
+                      </button>
+                      {!isSideMenuCollapsed && hasDepartments && isExpanded && (
+                        <ul className="nav-sublist">
+                          {childBusinessUnitDepartments[unit.id].map(dept => (
+                            <li key={dept.id} className="nav-subitem">
+                              <Link to={`/${businessUnit?.name?.toLowerCase().replace(/\s+/g, '-') || 'company'}${dept.menu_path || '#'}`} className="nav-link">
+                                <svg className="nav-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                  <circle cx="12" cy="12" r="3" />
+                                  <path d="M12 1v6m0 6v6" />
+                                  <path d="m21 12-6 0m-6 0-6 0" />
+                                </svg>
+                                <span className="nav-text">{dept.name}</span>
+                              </Link>
+                            </li>
+                          ))}
+                        </ul>
+                      )}
+                    </li>
+                  )
+                })
               )}
-            </ul>
+              </ul>
+            )}
           </div>
 
           {/* My Account Section */}
           <div className="nav-section">
-            <div className="nav-section-header">
+            <button 
+              className="nav-section-header nav-section-toggle"
+              onClick={() => toggleSectionExpansion('account-section')}
+            >
               <span className="nav-section-title">My Account</span>
-            </div>
-            <ul className="nav-list">
+              {!isSideMenuCollapsed && (
+                <svg 
+                  className={`nav-expand-icon ${expandedSections['account-section'] ? 'expanded' : ''}`} 
+                  width="16" 
+                  height="16" 
+                  viewBox="0 0 24 24" 
+                  fill="none" 
+                  stroke="currentColor" 
+                  strokeWidth="2"
+                >
+                  <path d="M9 18l6-6-6-6" />
+                </svg>
+              )}
+            </button>
+            {(!isSideMenuCollapsed && expandedSections['account-section']) && (
+              <ul className="nav-list">
               <li className="nav-item">
                 <div className="nav-link">
                   <svg className="nav-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -344,7 +576,8 @@ const DashboardLayout = ({ children, currentPage = 'Dashboard' }: DashboardLayou
                   {!isSideMenuCollapsed && <span className="nav-text">My Profile</span>}
                 </div>
               </li>
-            </ul>
+              </ul>
+            )}
           </div>
         </nav>
       </div>
@@ -354,7 +587,7 @@ const DashboardLayout = ({ children, currentPage = 'Dashboard' }: DashboardLayou
         {/* Top Header */}
         <header className="header">
           <div className="header-left">
-            <h1 className="page-title">{businessUnit.name} {currentPage}</h1>
+            <h1 className="page-title">{businessUnit?.name || 'Loading...'} {currentPage}</h1>
             <span className="page-subtitle">Group Management Center</span>
           </div>
           
@@ -504,7 +737,7 @@ const DashboardLayout = ({ children, currentPage = 'Dashboard' }: DashboardLayou
 
         {/* Page Content */}
         <main className="dashboard-main">
-          {children}
+          <Outlet />
         </main>
       </div>
 
