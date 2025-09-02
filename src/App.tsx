@@ -40,6 +40,13 @@ function App() {
             <Route path="business-management" element={<Dashboard />} />
             <Route path="business-management/employees" element={<EmployeeManagement />} />
             <Route path="executive" element={<Dashboard />} />
+            <Route path="group-sales" element={<Dashboard />} />
+            <Route path="group-accounts" element={<Dashboard />} />
+            <Route path="group-transport" element={<Dashboard />} />
+            <Route path="group-surveying" element={<Dashboard />} />
+            <Route path="group-construction" element={<Dashboard />} />
+            <Route path="group-hr" element={<Dashboard />} />
+            <Route path="group-marketing" element={<Dashboard />} />
             <Route path="sales" element={<Dashboard />} />
             <Route path="transport" element={<Dashboard />} />
             <Route path="surveying" element={<Dashboard />} />
