@@ -205,75 +205,69 @@ const SkillsManagement = () => {
         </div>
 
         {/* Skills Statistics */}
-        <div className="skills-stats">
+        <div className="equipment-stats">
           <div className="stat-card">
-            <div className="stat-icon">🎓</div>
-            <div className="stat-content">
-              <h3>{stats.totalSkills}</h3>
-              <p>Total Skills</p>
-            </div>
+            <div className="stat-number">{stats.totalSkills}</div>
+            <div className="stat-label">TOTAL SKILLS</div>
           </div>
           <div className="stat-card">
-            <div className="stat-icon">📜</div>
-            <div className="stat-content">
-              <h3>{stats.licenseRequiredSkills}</h3>
-              <p>License Required</p>
-            </div>
+            <div className="stat-number">{stats.licenseRequiredSkills}</div>
+            <div className="stat-label">LICENSE REQUIRED</div>
           </div>
           <div className="stat-card">
-            <div className="stat-icon">🏛️</div>
-            <div className="stat-content">
-              <h3>{stats.regulatorySkills}</h3>
-              <p>Regulatory Required</p>
-            </div>
+            <div className="stat-number">{stats.regulatorySkills}</div>
+            <div className="stat-label">REGULATORY REQUIRED</div>
           </div>
           <div className="stat-card">
-            <div className="stat-icon">🏷️</div>
-            <div className="stat-content">
-              <h3>{stats.totalCategories}</h3>
-              <p>Skill Categories</p>
-            </div>
+            <div className="stat-number">{stats.totalCategories}</div>
+            <div className="stat-label">SKILL CATEGORIES</div>
           </div>
         </div>
 
-        {/* Skill Categories Overview */}
-        <div className="skill-categories">
-          <h2>Skills by Category</h2>
-          <div className="category-grid">
+        {/* Skill Categories */}
+        <div className="equipment-categories">
+          <div className="categories-header">
+            <h2>Skill Categories</h2>
+            <span className="categories-count">{stats.totalCategories} categories • {stats.totalSkills} total skills</span>
+          </div>
+          
+          <div className="categories-table">
+            <div className="table-header">
+              <div className="header-cell">CATEGORY</div>
+              <div className="header-cell">Skill Count</div>
+              <div className="header-cell">Status</div>
+              <div className="header-cell">Actions</div>
+            </div>
+            
             {categories.map(category => (
-              <div key={category.id} className="category-card">
-                <div className="category-header">
-                  <div className="category-icon">{category.icon}</div>
-                  <div className="category-content">
-                    <h3>{category.name}</h3>
-                    <p>{category.skillCount} skills</p>
-                    {category.requires_license_tracking && (
-                      <span className="license-badge">License Tracking</span>
-                    )}
-                  </div>
-                  <button 
-                    className="category-add-btn"
-                    onClick={() => handleAddSkill(category.id)}
-                  >
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                      <line x1="12" y1="5" x2="12" y2="19" />
-                      <line x1="5" y1="12" x2="19" y2="12" />
-                    </svg>
-                  </button>
+              <div key={category.id} className="table-row">
+                <div className="cell category-cell">
+                  <div className="category-name">{category.name}</div>
+                  <div className="category-description">{category.description}</div>
                 </div>
-                <div className="category-description">
-                  <p>{category.description}</p>
+                <div className="cell">
+                  <span className="skill-count">{category.skillCount}</span>
+                  <span className="skill-unit">skills</span>
+                </div>
+                <div className="cell">
+                  <span className={`status-badge ${category.requires_license_tracking ? 'license-tracking' : 'active'}`}>
+                    {category.requires_license_tracking ? 'LICENSE TRACKING' : 'ACTIVE'}
+                  </span>
+                </div>
+                <div className="cell actions-cell">
+                  <button className="action-btn quick-view">QUICK VIEW</button>
+                  <button className="action-btn manage">MANAGE</button>
                 </div>
               </div>
             ))}
           </div>
         </div>
 
-        {/* Skills List */}
-        <div className="skills-list-section">
-          <div className="skills-list-header">
+        {/* Skills Inventory */}
+        <div className="equipment-inventory">
+          <div className="inventory-header">
             <h2>Skills Inventory</h2>
-            <div className="skills-filters">
+            <div className="inventory-filters">
               <select 
                 value={filterCategory} 
                 onChange={(e) => setFilterCategory(e.target.value)}
@@ -286,90 +280,61 @@ const SkillsManagement = () => {
                   </option>
                 ))}
               </select>
-              <label className="filter-checkbox">
-                <input
-                  type="checkbox"
-                  checked={showLicenseOnly}
-                  onChange={(e) => setShowLicenseOnly(e.target.checked)}
-                />
-                <span>License Required Only</span>
-              </label>
+              <select 
+                value={showLicenseOnly ? 'license' : 'all'} 
+                onChange={(e) => setShowLicenseOnly(e.target.value === 'license')}
+                className="filter-select"
+              >
+                <option value="all">All Skill Types</option>
+                <option value="license">License Required Only</option>
+              </select>
             </div>
           </div>
 
           {filteredSkills.length === 0 ? (
-            <div className="empty-state">
-              <div className="empty-icon">🎓</div>
+            <div className="empty-inventory">
               <h3>No Skills Found</h3>
               <p>Adjust your filters or add new skills to build your skills catalog.</p>
               <button 
-                className="empty-state-btn"
+                className="add-equipment-btn"
                 onClick={() => setShowAddModal(true)}
               >
                 Add Your First Skill
               </button>
             </div>
           ) : (
-            <div className="skills-grid">
+            <div className="inventory-grid">
               {filteredSkills.map(skill => (
-                <div key={skill.id} className="skill-card">
-                  <div className="skill-card-header">
-                    <div className="skill-category-badge">
-                      {skill.category_icon} {skill.category_name}
+                <div key={skill.id} className="equipment-card">
+                  <div className="equipment-card-header">
+                    <div className="equipment-type">
+                      <span className="type-badge">{skill.category_name.toUpperCase()}</span>
                     </div>
-                    <div className="skill-badges">
-                      {skill.requires_license && (
-                        <span className="badge license-badge">License Required</span>
-                      )}
-                      {skill.requires_certification && (
-                        <span className="badge cert-badge">Certification</span>
-                      )}
-                      {skill.is_regulatory_requirement && (
-                        <span className="badge regulatory-badge">Regulatory</span>
-                      )}
+                    <div className="equipment-status">
+                      <span className={`status-badge ${skill.requires_license ? 'license-required' : 'operational'}`}>
+                        {skill.requires_license ? 'LICENSE REQUIRED' : 'OPERATIONAL'}
+                      </span>
                     </div>
                   </div>
                   
-                  <div className="skill-card-content">
+                  <div className="equipment-info">
                     <h3>{skill.name}</h3>
-                    <p>{skill.description}</p>
-                    
-                    <div className="skill-details">
-                      {skill.requires_license && (
-                        <div className="skill-detail">
-                          <strong>License Type:</strong> {skill.license_type?.replace(/_/g, ' ')}
-                        </div>
-                      )}
+                    <div className="equipment-details">
                       {skill.minimum_experience_months > 0 && (
-                        <div className="skill-detail">
-                          <strong>Min Experience:</strong> {skill.minimum_experience_months} months
-                        </div>
+                        <span className="detail-item">Min Experience: {skill.minimum_experience_months} months</span>
                       )}
                       {skill.renewal_period_months && (
-                        <div className="skill-detail">
-                          <strong>Renewal:</strong> Every {skill.renewal_period_months} months
-                        </div>
+                        <span className="detail-item">Renewal: Every {skill.renewal_period_months} months</span>
                       )}
                       {skill.regulatory_authority && (
-                        <div className="skill-detail">
-                          <strong>Authority:</strong> {skill.regulatory_authority}
-                        </div>
+                        <span className="detail-item">Authority: {skill.regulatory_authority}</span>
                       )}
                     </div>
                   </div>
                   
-                  <div className="skill-card-actions">
-                    <button className="edit-btn">Edit</button>
-                    <button className="view-btn">View Details</button>
-                    <button className="assign-btn" onClick={() => handleAssignEmployees(skill.id)}>
-                      Assign Employees
-                    </button>
-                    {skill.requires_license && (
-                      <button className="license-btn">Manage Licenses</button>
-                    )}
-                    <button className="delete-btn" onClick={() => setShowDeleteConfirm(skill.id)}>
-                      Delete
-                    </button>
+                  <div className="equipment-actions">
+                    <button className="manage-btn">Manage</button>
+                    <button className="quick-view-btn">Quick View</button>
                   </div>
                 </div>
               ))}
@@ -400,22 +365,24 @@ const SkillsManagement = () => {
                   <h4>Choose Skill Category</h4>
                   <p>Select the category for the new skill:</p>
                   
-                  <div className="skill-category-grid">
+                  <div className="category-selection-list">
                     {categories.map(category => (
                       <div 
                         key={category.id}
-                        className="skill-category-card" 
+                        className="category-selection-item" 
                         onClick={() => {
                           alert(`${category.name} skill form will be implemented in next phase`)
                           setShowAddModal(false)
                         }}
                       >
-                        <div className="skill-category-icon">{category.icon}</div>
-                        <h5>{category.name}</h5>
-                        <p>{category.description}</p>
-                        {category.requires_license_tracking && (
-                          <span className="license-tracking-badge">License Tracking</span>
-                        )}
+                        <div className="category-selection-content">
+                          <h5>{category.name}</h5>
+                          <p>{category.description}</p>
+                          {category.requires_license_tracking && (
+                            <span className="license-tracking-badge">License Tracking Required</span>
+                          )}
+                        </div>
+                        <div className="category-selection-arrow">→</div>
                       </div>
                     ))}
                   </div>
@@ -445,7 +412,6 @@ const SkillsManagement = () => {
               
               <div className="delete-modal-content">
                 <div className="delete-warning">
-                  <div className="warning-icon">⚠️</div>
                   <h4>Are you sure you want to delete this skill?</h4>
                   <p>
                     This action cannot be undone. The skill will be permanently removed from your system.
@@ -492,7 +458,6 @@ const SkillsManagement = () => {
               
               <div className="assignment-modal-content">
                 <div className="assignment-placeholder">
-                  <div className="placeholder-icon">👥</div>
                   <h4>Employee Assignment System</h4>
                   <p>
                     Employee assignment interface will be implemented when employee 
