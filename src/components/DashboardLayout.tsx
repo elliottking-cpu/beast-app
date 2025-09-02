@@ -524,13 +524,23 @@ const DashboardLayout = ({ currentPage = 'Dashboard' }: DashboardLayoutProps) =>
                         <ul className="nav-sublist">
                           {childBusinessUnitDepartments[unit.id].map(dept => (
                             <li key={dept.id} className="nav-subitem">
-                              <Link to={`/${businessUnit?.name?.toLowerCase().replace(/\s+/g, '-') || 'company'}${dept.menu_path || '#'}`} className="nav-link">
+                              <Link to={`/${unit.name?.toLowerCase().replace(/\s+/g, '-') || 'unit'}${dept.name === 'HR' ? '/hr/employees' : dept.menu_path || '#'}`} className="nav-link">
                                 <svg className="nav-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                                  <circle cx="12" cy="12" r="3" />
-                                  <path d="M12 1v6m0 6v6" />
-                                  <path d="m21 12-6 0m-6 0-6 0" />
+                                  {dept.name === 'HR' && (
+                                    <>
+                                      <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" />
+                                      <circle cx="9" cy="7" r="4" />
+                                    </>
+                                  )}
+                                  {dept.name !== 'HR' && (
+                                    <>
+                                      <circle cx="12" cy="12" r="3" />
+                                      <path d="M12 1v6m0 6v6" />
+                                      <path d="m21 12-6 0m-6 0-6 0" />
+                                    </>
+                                  )}
                                 </svg>
-                                <span className="nav-text">{dept.name}</span>
+                                <span className="nav-text">{dept.name === 'HR' ? 'Employee Management' : dept.name}</span>
                               </Link>
                             </li>
                           ))}

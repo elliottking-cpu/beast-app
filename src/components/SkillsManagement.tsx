@@ -173,14 +173,14 @@ const SkillsManagement = () => {
 
   return (
     <>
-      <div className="skills-management">
-        <div className="skills-header">
-          <div className="skills-title-section">
+      <div className="equipment-management">
+        <div className="equipment-header">
+          <div className="equipment-title-section">
             <h1>Skills & Certifications Management</h1>
             <p>Define employee skills, certifications, and license requirements for your operations</p>
           </div>
           
-          <div className="skills-actions">
+          <div className="equipment-actions">
             <button 
               className="manage-categories-btn"
               onClick={() => alert('Skill category management will be implemented next')}

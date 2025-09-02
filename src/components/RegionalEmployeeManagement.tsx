@@ -219,15 +219,15 @@ const RegionalEmployeeManagement = () => {
 
   return (
     <>
-      <div className="employee-management">
-        <div className="employee-header">
-          <div className="employee-title-section">
+      <div className="equipment-management">
+        <div className="equipment-header">
+          <div className="equipment-title-section">
             <h1>HR - Employee Management</h1>
             <p>Manage employees for {currentBusinessUnit?.name}</p>
           </div>
-          <div className="employee-actions">
+          <div className="equipment-actions">
             <button 
-              className="btn btn-primary"
+              className="add-equipment-btn"
               onClick={() => setShowAddEmployee(true)}
             >
               <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">

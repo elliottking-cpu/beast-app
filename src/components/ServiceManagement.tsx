@@ -159,14 +159,14 @@ const ServiceManagement = () => {
 
   return (
     <>
-      <div className="service-management">
-        <div className="service-header">
-          <div className="service-title-section">
+      <div className="equipment-management">
+        <div className="equipment-header">
+          <div className="equipment-title-section">
             <h1>Service Catalog Management</h1>
             <p>Define your service offerings, requirements, and pricing structure</p>
           </div>
           
-          <div className="service-actions">
+          <div className="equipment-actions">
             <button 
               className="manage-categories-btn"
               onClick={() => alert('Service category management will be implemented next')}

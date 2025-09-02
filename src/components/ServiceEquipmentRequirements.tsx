@@ -179,13 +179,12 @@ const ServiceEquipmentRequirements = () => {
   }
 
   return (
-    <div className="service-equipment-requirements">
-        {/* Service Overview */}
-        <div className="service-overview">
-          <div className="service-overview-content">
-            <div className="service-info">
-              <h1>{service.name} - Equipment Requirements</h1>
-              <p>{service.description}</p>
+    <div className="equipment-management">
+        {/* Service Header */}
+        <div className="equipment-header">
+          <div className="equipment-title-section">
+            <h1>{service.name} - Equipment Requirements</h1>
+            <p>{service.description}</p>
               <div className="service-details">
                 <span className="detail-item">Duration: {service.estimated_duration_hours}h</span>
                 <span className="detail-item">Price: £{service.base_price}</span>
@@ -199,11 +198,11 @@ const ServiceEquipmentRequirements = () => {
                 </span>
               </div>
             </div>
-            <div className="service-actions">
-              <button className="back-btn" onClick={() => navigate(-1)}>
-                ← Back to Services
-              </button>
-            </div>
+          </div>
+          <div className="equipment-actions">
+            <button className="back-btn" onClick={() => navigate(-1)}>
+              ← Back to Services
+            </button>
           </div>
         </div>
 

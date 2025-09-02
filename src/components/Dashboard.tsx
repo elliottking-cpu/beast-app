@@ -86,15 +86,15 @@ const Dashboard = () => {
 
   return (
     <>
-      <div className="dashboard-main-content">
+      <div className="equipment-management">
         {/* Header Section */}
-        <div className="dashboard-header">
-          <div className="dashboard-title-section">
+        <div className="equipment-header">
+          <div className="equipment-title-section">
             <h1>Dashboard</h1>
             <p>Overview of your business operations and key metrics</p>
           </div>
-          <div className="dashboard-actions">
-            <button className="btn btn-primary">
+          <div className="equipment-actions">
+            <button className="manage-categories-btn">
               <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                 <circle cx="12" cy="12" r="3" />
                 <path d="M12 1v6m0 6v6" />

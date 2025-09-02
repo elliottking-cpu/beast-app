@@ -174,10 +174,10 @@ const EquipmentCategoriesManagement = () => {
   }
 
   return (
-    <div className="equipment-categories-management">
+    <div className="equipment-management">
         {/* Page Header */}
-        <div className="categories-header">
-          <div className="categories-title-section">
+        <div className="equipment-header">
+          <div className="equipment-title-section">
             <div className="categories-breadcrumb">
               <button onClick={() => navigate(-1)} className="breadcrumb-link">
                 Equipment Management
@@ -189,7 +189,7 @@ const EquipmentCategoriesManagement = () => {
             <p>Organize and manage equipment categories for your business operations</p>
           </div>
           
-          <div className="categories-actions">
+          <div className="equipment-actions">
             <button 
               className="add-category-btn"
               onClick={() => setShowAddForm(true)}

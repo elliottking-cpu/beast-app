@@ -485,12 +485,10 @@ const EquipmentCreationWizard = () => {
 
   if (isLoading) {
     return (
-      <DashboardLayout currentPage="Add Equipment">
-        <div className="wizard-loading">
-          <div className="loading-spinner"></div>
-          <p>Loading equipment creation wizard...</p>
-        </div>
-      </DashboardLayout>
+      <div className="wizard-loading">
+        <div className="loading-spinner"></div>
+        <p>Loading equipment creation wizard...</p>
+      </div>
     )
   }
 
@@ -498,11 +496,10 @@ const EquipmentCreationWizard = () => {
   const categoryFields = getCategorySpecificFields()
 
   return (
-    <DashboardLayout currentPage="Add Equipment">
-      <div className="equipment-creation-wizard">
-        {/* Wizard Header */}
-        <div className="wizard-header">
-          <div className="wizard-title-section">
+    <div className="equipment-management">
+      {/* Wizard Header */}
+      <div className="equipment-header">
+        <div className="equipment-title-section">
             <div className="wizard-breadcrumb">
               <button onClick={() => navigate(-1)} className="breadcrumb-link">
                 Equipment Management
@@ -1078,7 +1075,6 @@ const EquipmentCreationWizard = () => {
           </div>
         </div>
       </div>
-    </DashboardLayout>
   )
 }
 

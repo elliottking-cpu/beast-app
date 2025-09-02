@@ -199,10 +199,10 @@ const EquipmentCategoryDetail = () => {
   }
 
   return (
-    <div className="equipment-category-detail">
+    <div className="equipment-management">
         {/* Category Header */}
-        <div className="category-detail-header">
-          <div className="category-title-section">
+        <div className="equipment-header">
+          <div className="equipment-title-section">
             <div className="category-breadcrumb">
               <button onClick={() => navigate(-1)} className="breadcrumb-link">
                 Equipment Categories
@@ -224,7 +224,7 @@ const EquipmentCategoryDetail = () => {
             </div>
           </div>
           
-          <div className="category-actions">
+          <div className="equipment-actions">
             <button 
               className="edit-category-btn"
               onClick={() => setIsEditing(!isEditing)}

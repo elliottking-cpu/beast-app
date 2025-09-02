@@ -253,9 +253,9 @@ const EquipmentDetail = () => {
   }
 
   return (
-    <div className="equipment-detail">
+    <div className="equipment-management">
         {/* Equipment Header */}
-        <div className="equipment-detail-header">
+        <div className="equipment-header">
           <div className="equipment-title-section">
             <div className="equipment-breadcrumb">
               <button onClick={() => navigate(-1)} className="breadcrumb-link">
