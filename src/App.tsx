@@ -47,6 +47,7 @@ function App() {
             <Route path="group-construction" element={<Dashboard />} />
             <Route path="group-hr" element={<Dashboard />} />
             <Route path="group-marketing" element={<Dashboard />} />
+            <Route path="group-app-settings" element={<Dashboard />} />
             <Route path="sales" element={<Dashboard />} />
             <Route path="transport" element={<Dashboard />} />
             <Route path="surveying" element={<Dashboard />} />

@@ -389,7 +389,16 @@ const DashboardLayout = ({ currentPage = 'Dashboard' }: DashboardLayoutProps) =>
                             <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
                           </>
                         )}
-                        {!['Executive', 'Business Management', 'HR', 'Sales', 'Transport', 'Surveying', 'Construction', 'Accounts', 'Group Sales', 'Group Accounts', 'Group Transport', 'Group Surveying', 'Group Construction', 'Group HR', 'Group Marketing & Advertising'].includes(dept.name) && 
+                        {dept.name === 'Group App Settings' && (
+                          <>
+                            <circle cx="12" cy="12" r="3" />
+                            <path d="M12 1v6m0 6v6" />
+                            <path d="m21 12-6 0m-6 0-6 0" />
+                            <path d="M4 4l16 16" />
+                            <path d="M20 4l-16 16" />
+                          </>
+                        )}
+                        {!['Executive', 'Business Management', 'HR', 'Sales', 'Transport', 'Surveying', 'Construction', 'Accounts', 'Group Sales', 'Group Accounts', 'Group Transport', 'Group Surveying', 'Group Construction', 'Group HR', 'Group Marketing & Advertising', 'Group App Settings'].includes(dept.name) && 
                           <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z" />
                         }
                       </svg>
