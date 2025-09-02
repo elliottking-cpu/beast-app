@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, ReactNode } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import './Dashboard.css'
@@ -25,7 +25,12 @@ interface User {
   job_role: { name: string }
 }
 
-const Dashboard = () => {
+interface DashboardLayoutProps {
+  children: ReactNode
+  currentPage?: string
+}
+
+const DashboardLayout = ({ children, currentPage = 'Dashboard' }: DashboardLayoutProps) => {
   const { companyName } = useParams<{ companyName: string }>()
   const navigate = useNavigate()
   const [user, setUser] = useState<User | null>(null)
@@ -39,8 +44,6 @@ const Dashboard = () => {
   const [showSettings, setShowSettings] = useState(false)
   const [isDarkMode, setIsDarkMode] = useState(false)
   const [searchQuery, setSearchQuery] = useState('')
-  const [showEquipmentModal, setShowEquipmentModal] = useState(false)
-  const [equipmentStats, setEquipmentStats] = useState({ total: 0, categories: 8, operational: 0 })
 
   useEffect(() => {
     loadDashboardData()
@@ -135,9 +138,6 @@ const Dashboard = () => {
         job_role: { name: (userData.job_roles as any)?.name || 'Unknown' }
       })
 
-      // Load equipment stats
-      await loadEquipmentStats(businessUnitData.id)
-
     } catch (error) {
       console.error('Error loading dashboard:', error)
       navigate('/login')
@@ -146,62 +146,8 @@ const Dashboard = () => {
     }
   }
 
-  const loadEquipmentStats = async (businessUnitId: string) => {
-    try {
-      // Count equipment across all major equipment tables
-      const equipmentTables = [
-        'tanker_equipment',
-        'jetvac_equipment', 
-        'excavator_equipment',
-        'dumper_truck_equipment',
-        'cctv_camera_equipment',
-        'van_equipment',
-        'trailer_equipment',
-        'general_equipment'
-      ]
-
-      let totalEquipment = 0
-      let operationalEquipment = 0
-
-      for (const table of equipmentTables) {
-        const { count: totalCount } = await supabase
-          .from(table)
-          .select('*', { count: 'exact', head: true })
-          .eq('business_unit_id', businessUnitId)
-
-        const { count: operationalCount } = await supabase
-          .from(table)
-          .select('*', { count: 'exact', head: true })
-          .eq('business_unit_id', businessUnitId)
-          .eq('is_operational', true)
-
-        totalEquipment += totalCount || 0
-        operationalEquipment += operationalCount || 0
-      }
-
-      setEquipmentStats({
-        total: totalEquipment,
-        categories: 8, // Fixed number of major equipment types
-        operational: operationalEquipment
-      })
-    } catch (error) {
-      console.error('Error loading equipment stats:', error)
-    }
-  }
-
   const toggleSideMenu = () => {
     setIsSideMenuCollapsed(!isSideMenuCollapsed)
-  }
-
-  const handleCreateChildCompany = () => {
-    // TODO: Navigate to child company creation flow
-    alert('Create Child Company functionality will be implemented in the next flow')
-  }
-
-  const handleEquipmentTypeSelect = (equipmentType: string) => {
-    // TODO: Open equipment form for selected type
-    alert(`Equipment form for ${equipmentType} will be implemented next`)
-    setShowEquipmentModal(false)
   }
 
   const handleLogout = async () => {
@@ -216,7 +162,6 @@ const Dashboard = () => {
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault()
-    // TODO: Implement search functionality
     console.log('Search query:', searchQuery)
   }
 
@@ -286,8 +231,11 @@ const Dashboard = () => {
               <span className="nav-section-title">{businessUnit.name}</span>
             </div>
             <ul className="nav-list">
-              <li className="nav-item active">
-                <div className="nav-link">
+              <li className={`nav-item ${currentPage === 'Dashboard' ? 'active' : ''}`}>
+                <div className="nav-link" onClick={() => {
+                  const companySlug = businessUnit.name.toLowerCase().replace(/\s+/g, '-')
+                  navigate(`/${companySlug}/dashboard`)
+                }}>
                   <svg className="nav-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                     <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
                     <polyline points="9,22 9,12 15,12 15,22" />
@@ -310,7 +258,7 @@ const Dashboard = () => {
                   {dept.name === 'Executive' && !isSideMenuCollapsed && (
                     <ul className="nav-submenu">
                       <li className="nav-subitem">
-                        <div className="nav-link" onClick={() => {
+                        <div className={`nav-link ${currentPage === 'Equipment' ? 'active' : ''}`} onClick={() => {
                           const companySlug = businessUnit?.name.toLowerCase().replace(/\s+/g, '-')
                           navigate(`/${companySlug}/equipment`)
                         }}>
@@ -320,6 +268,29 @@ const Dashboard = () => {
                             <path d="M21 12h-6m-6 0H3" />
                           </svg>
                           <span className="nav-text">Equipment Management</span>
+                        </div>
+                      </li>
+                      <li className="nav-subitem">
+                        <div className={`nav-link ${currentPage === 'Skills Management' ? 'active' : ''}`} onClick={() => {
+                          const companySlug = businessUnit?.name.toLowerCase().replace(/\s+/g, '-')
+                          navigate(`/${companySlug}/skills`)
+                        }}>
+                          <svg className="nav-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                            <path d="M22 10v6M2 10l10-5 10 5-10 5z" />
+                            <path d="M6 12v5c3 3 9 3 12 0v-5" />
+                          </svg>
+                          <span className="nav-text">Skills & Certifications</span>
+                        </div>
+                      </li>
+                      <li className="nav-subitem">
+                        <div className={`nav-link ${currentPage === 'Services' ? 'active' : ''}`} onClick={() => {
+                          const companySlug = businessUnit?.name.toLowerCase().replace(/\s+/g, '-')
+                          navigate(`/${companySlug}/services`)
+                        }}>
+                          <svg className="nav-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                            <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
+                          </svg>
+                          <span className="nav-text">Service Catalog</span>
                         </div>
                       </li>
                     </ul>
@@ -383,7 +354,7 @@ const Dashboard = () => {
         {/* Top Header */}
         <header className="header">
           <div className="header-left">
-            <h1 className="page-title">{businessUnit.name} Dashboard</h1>
+            <h1 className="page-title">{businessUnit.name} {currentPage}</h1>
             <span className="page-subtitle">Group Management Center</span>
           </div>
           
@@ -461,7 +432,7 @@ const Dashboard = () => {
                 title="Account Settings"
               >
                 <div className="avatar">
-                  {user.first_name[0]}{user.last_name[0]}
+                  {user?.first_name[0]}{user?.last_name[0]}
                 </div>
               </button>
               
@@ -470,12 +441,12 @@ const Dashboard = () => {
                   <div className="dropdown-header">
                     <div className="user-info">
                       <div className="user-avatar-large">
-                        {user.first_name[0]}{user.last_name[0]}
+                        {user?.first_name[0]}{user?.last_name[0]}
                       </div>
                       <div className="user-details">
-                        <h4>{user.first_name} {user.last_name}</h4>
-                        <p>{user.job_role.name}</p>
-                        <p className="user-email">{user.email}</p>
+                        <h4>{user?.first_name} {user?.last_name}</h4>
+                        <p>{user?.job_role.name}</p>
+                        <p className="user-email">{user?.email}</p>
                       </div>
                     </div>
                     <button onClick={() => setShowSettings(false)} className="dropdown-close">
@@ -531,103 +502,9 @@ const Dashboard = () => {
           </div>
         </header>
 
-        {/* Dashboard Content */}
+        {/* Page Content */}
         <main className="dashboard-main">
-          <div className="dashboard-content">
-            <div className="setup-flow">
-              <div className="setup-header">
-                <h2 className="setup-title">Complete Your Group Company Setup</h2>
-                <p className="setup-description">
-                  Follow these steps to configure your group management platform and unlock full functionality.
-                </p>
-              </div>
-              
-              <div className="setup-progress">
-                <div className="setup-steps">
-                  <div className="setup-step completed">
-                    <div className="step-icon">✓</div>
-                    <div className="step-content">
-                      <h4>Company Details</h4>
-                      <p>Group company information configured</p>
-                    </div>
-                  </div>
-                  <div className="setup-step completed">
-                    <div className="step-icon">✓</div>
-                    <div className="step-content">
-                      <h4>Equipment Types</h4>
-                      <p>Equipment catalog foundation ready</p>
-                    </div>
-                  </div>
-                  <div className="setup-step completed">
-                    <div className="step-icon">✓</div>
-                    <div className="step-content">
-                      <h4>Skills & Certifications</h4>
-                      <p>Employee skills and licenses defined</p>
-                    </div>
-                  </div>
-                  <div className="setup-step current">
-                    <div className="step-icon">4</div>
-                    <div className="step-content">
-                      <h4>Services Configuration</h4>
-                      <p>Define service catalog and requirements</p>
-                    </div>
-                  </div>
-                  <div className="setup-step pending">
-                    <div className="step-icon">5</div>
-                    <div className="step-content">
-                      <h4>Regional Unit Creation</h4>
-                      <p>Create your first regional business unit</p>
-                    </div>
-                  </div>
-                  <div className="setup-step pending">
-                    <div className="step-icon">6</div>
-                    <div className="step-content">
-                      <h4>Go Live</h4>
-                      <p>Launch your operational platform</p>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              <div className="current-step-details">
-                <div className="step-details-card">
-                  <div className="step-details-header">
-                    <h3>Step 4: Services Configuration</h3>
-                    <div className="step-badge">Current Step</div>
-                  </div>
-                  <div className="step-details-content">
-                    <p>
-                      Define your service catalog with equipment and skill requirements. Link services 
-                      to specific equipment types and employee certifications for intelligent job assignment.
-                    </p>
-                    <div className="services-quick-stats">
-                      <div className="quick-stat">
-                        <h4>7</h4>
-                        <p>Example Services</p>
-                      </div>
-                      <div className="quick-stat">
-                        <h4>6</h4>
-                        <p>Service Categories</p>
-                      </div>
-                      <div className="quick-stat">
-                        <h4>£165</h4>
-                        <p>Average Price</p>
-                      </div>
-                    </div>
-                    <button className="primary-action-btn" onClick={() => {
-                      const companySlug = businessUnit?.name.toLowerCase().replace(/\s+/g, '-')
-                      navigate(`/${companySlug}/services`)
-                    }}>
-                      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                        <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
-                      </svg>
-                      Manage Service Catalog
-                    </button>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
+          {children}
         </main>
       </div>
 
@@ -689,86 +566,8 @@ const Dashboard = () => {
           </div>
         </>
       )}
-
-      {/* Equipment Management Modal */}
-      {showEquipmentModal && (
-        <>
-          <div className="modal-overlay" onClick={() => setShowEquipmentModal(false)} />
-          <div className="equipment-modal">
-            <div className="equipment-modal-header">
-              <h3>Equipment Management</h3>
-              <button 
-                className="modal-close"
-                onClick={() => setShowEquipmentModal(false)}
-              >
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                  <line x1="18" y1="6" x2="6" y2="18" />
-                  <line x1="6" y1="6" x2="18" y2="18" />
-                </svg>
-              </button>
-            </div>
-            
-            <div className="equipment-modal-content">
-              <div className="equipment-type-selector">
-                <h4>Choose Equipment Type</h4>
-                <p>Select the type of equipment you want to add to your fleet:</p>
-                
-                <div className="equipment-type-grid">
-                  <div className="equipment-type-card" onClick={() => handleEquipmentTypeSelect('tanker')}>
-                    <div className="equipment-type-icon">🚛</div>
-                    <h5>Tanker</h5>
-                    <p>Vacuum tankers for waste collection</p>
-                  </div>
-                  
-                  <div className="equipment-type-card" onClick={() => handleEquipmentTypeSelect('jetvac')}>
-                    <div className="equipment-type-icon">💨</div>
-                    <h5>Jet Vac</h5>
-                    <p>High-pressure jetting equipment</p>
-                  </div>
-                  
-                  <div className="equipment-type-card" onClick={() => handleEquipmentTypeSelect('excavator')}>
-                    <div className="equipment-type-icon">🚜</div>
-                    <h5>Excavator</h5>
-                    <p>Digging and earthmoving equipment</p>
-                  </div>
-                  
-                  <div className="equipment-type-card" onClick={() => handleEquipmentTypeSelect('dumper')}>
-                    <div className="equipment-type-icon">🚚</div>
-                    <h5>Dumper Truck</h5>
-                    <p>Material transport vehicles</p>
-                  </div>
-                  
-                  <div className="equipment-type-card" onClick={() => handleEquipmentTypeSelect('cctv')}>
-                    <div className="equipment-type-icon">📹</div>
-                    <h5>CCTV Camera</h5>
-                    <p>Drain inspection equipment</p>
-                  </div>
-                  
-                  <div className="equipment-type-card" onClick={() => handleEquipmentTypeSelect('van')}>
-                    <div className="equipment-type-icon">🚐</div>
-                    <h5>Van</h5>
-                    <p>Service and transport vehicles</p>
-                  </div>
-                  
-                  <div className="equipment-type-card" onClick={() => handleEquipmentTypeSelect('trailer')}>
-                    <div className="equipment-type-icon">🚚</div>
-                    <h5>Trailer</h5>
-                    <p>Towed equipment and materials</p>
-                  </div>
-                  
-                  <div className="equipment-type-card" onClick={() => handleEquipmentTypeSelect('general')}>
-                    <div className="equipment-type-icon">⚙️</div>
-                    <h5>General Equipment</h5>
-                    <p>Tools and other equipment</p>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </>
-      )}
     </div>
   )
 }
 
-export default Dashboard
+export default DashboardLayout

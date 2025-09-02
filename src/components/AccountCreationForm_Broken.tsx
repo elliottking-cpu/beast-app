@@ -96,9 +96,6 @@ const AccountCreationForm = () => {
     setErrors([])
 
     try {
-      // ONLY VALIDATION - NO DATABASE CREATION
-      console.log('Validating form data (no database creation)...')
-      
       // Check for existing work email in our users table
       const { data: existingUser, error: userCheckError } = await supabase
         .from('users')
@@ -141,10 +138,85 @@ const AccountCreationForm = () => {
       setTimeout(() => {
         navigate('/company-setup')
       }, 100)
+      const { data: authData, error: authError } = await supabase.auth.signUp({
+        email: formData.workEmail,
+        password: formData.password,
+        options: {
+          emailRedirectTo: undefined // Don't send confirmation email
+        }
+      })
+
+      if (authError) throw authError
+
+      if (!authData.user) {
+        throw new Error('Failed to create authentication user')
+      }
+
+      // Create business unit
+      const { data: businessUnit, error: businessUnitError } = await supabase
+        .from('business_units')
+        .insert({
+          name: formData.groupCompanyName,
+          business_unit_type_id: '716008fd-932c-447f-abc2-3b1e9305bb59', // GROUP_MANAGEMENT
+          company_registration_number: formData.companyId,
+          address: `${formData.homeAddress1}${formData.homeAddress2 ? ', ' + formData.homeAddress2 : ''}${formData.homeAddressTown ? ', ' + formData.homeAddressTown : ''}${formData.homeAddressCity ? ', ' + formData.homeAddressCity : ''}${formData.homeAddressPostcode ? ', ' + formData.homeAddressPostcode : ''}`,
+          email: formData.workEmail,
+          phone: formData.workPhone
+        })
+        .select()
+        .single()
+
+      if (businessUnitError) throw businessUnitError
+
+      // Create user with CEO role (linked to Supabase Auth user)
+      const { data: user, error: userError } = await supabase
+        .from('users')
+        .insert({
+          id: authData.user.id, // Use Supabase Auth user ID
+          email: formData.workEmail,
+          first_name: formData.firstName,
+          last_name: formData.lastName,
+          user_type_id: '771e399d-be01-427f-bfd7-5f7019c61971', // EMPLOYEE
+          job_role_id: '98711fa7-1e46-4c01-a74e-18423130fb10', // CEO
+          business_unit_id: businessUnit.id
+        })
+        .select()
+        .single()
+
+      if (userError) throw userError
+
+      // Auto-assign Executive department to GROUP_MANAGEMENT business unit
+      const { data: executiveDept, error: deptError } = await supabase
+        .from('departments')
+        .select('id')
+        .eq('name', 'Executive')
+        .single()
+
+      if (deptError) throw deptError
+
+      const { error: deptAssignError } = await supabase
+        .from('business_unit_departments')
+        .insert({
+          business_unit_id: businessUnit.id,
+          department_id: executiveDept.id,
+          manager_user_id: user.id
+        })
+
+      if (deptAssignError) throw deptAssignError
+
+      // Store user and business unit info for company setup page
+      localStorage.setItem('newAccountData', JSON.stringify({
+        userId: user.id,
+        businessUnitId: businessUnit.id,
+        companyName: formData.groupCompanyName
+      }))
+
+      // Redirect to company setup
+      navigate('/company-setup')
 
     } catch (error) {
       console.error('Account creation error:', error)
-      setErrors(['An error occurred while validating your account. Please try again.'])
+      setErrors(['An error occurred while creating your account. Please try again.'])
     } finally {
       setIsLoading(false)
     }
@@ -404,7 +476,7 @@ const AccountCreationForm = () => {
                 className="submit-button"
                 disabled={isLoading}
               >
-                {isLoading ? 'Validating...' : 'Continue to Company Setup'}
+                {isLoading ? 'Creating Account...' : 'Create Account'}
               </button>
             </div>
           </form>

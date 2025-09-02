@@ -45,8 +45,8 @@ const GroupCompanySetup = () => {
   const [errors, setErrors] = useState<string[]>([])
 
   useEffect(() => {
-    // Get account data from localStorage
-    const storedData = localStorage.getItem('newAccountData')
+    // Get account creation data from localStorage
+    const storedData = localStorage.getItem('accountCreationData')
     if (!storedData) {
       // No account data - redirect to landing page
       navigate('/')
@@ -56,26 +56,15 @@ const GroupCompanySetup = () => {
     const data = JSON.parse(storedData)
     setAccountData(data)
     
-    // We'll need to fetch the Company House ID from the business unit
-    fetchCompanyHouseId(data.businessUnitId)
+    // Pre-fill Company House ID from account creation form
+    setSetupData(prev => ({ 
+      ...prev, 
+      companyHouseId: data.formData.companyId || '' 
+    }))
   }, [navigate])
 
-  const fetchCompanyHouseId = async (businessUnitId: string) => {
-    try {
-      const { data, error } = await supabase
-        .from('business_units')
-        .select('company_registration_number')
-        .eq('id', businessUnitId)
-        .single()
-
-      if (error) throw error
-
-      if (data) {
-        setSetupData(prev => ({ ...prev, companyHouseId: data.company_registration_number || '' }))
-      }
-    } catch (error) {
-      console.error('Error fetching company house ID:', error)
-    }
+  const handleGoBack = () => {
+    navigate('/create-account')
   }
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
@@ -129,52 +118,56 @@ const GroupCompanySetup = () => {
     setErrors([])
 
     try {
-      // Update business unit with additional details including logo
-      const { error: businessUnitError } = await supabase
-        .from('business_units')
-        .update({
-          address: `${setupData.companyAddress}, ${setupData.companyCity}, ${setupData.companyPostcode}`,
-          phone: setupData.companyPhone,
-          email: setupData.generalEmail || accountData.workEmail,
-          vat_number: setupData.vatNumber || null,
-          utr_number: null, // Not collected in this form
-          tax_year_end_month: parseInt(setupData.yearEndMonth),
-          logo_url: logoUrl
-        })
-        .eq('id', accountData.businessUnitId)
+      console.log('Creating complete account at final step...')
+      
+      // Get the stored account creation data
+      const formData = accountData.formData
 
-      if (businessUnitError) throw businessUnitError
+      // Step 1: Re-validate email and company ID
+      console.log('Re-validating email and company ID...')
+      
+      const { data: existingUser, error: userCheckError } = await supabase
+        .from('users')
+        .select('email')
+        .eq('email', formData.workEmail)
+        .limit(1)
 
-      // Store additional settings in business_unit_settings
-      const settingsToStore = [
-        { key: 'general_email', value: setupData.generalEmail },
-        { key: 'accounts_email', value: setupData.accountsEmail },
-        { key: 'support_email', value: setupData.supportEmail },
-        { key: 'customer_care_email', value: setupData.customerCareEmail },
-        { key: 'paye_number', value: setupData.payeNumber },
-        { key: 'cis_number', value: setupData.cisNumber },
-        { key: 'favicon_url', value: faviconUrl || '' }
-      ].filter(setting => setting.value.trim() !== '')
+      if (userCheckError) throw userCheckError
 
-      if (settingsToStore.length > 0) {
-        const settingsInserts = settingsToStore.map(setting => ({
-          business_unit_id: accountData.businessUnitId,
-          setting_key: setting.key,
-          setting_value: setting.value,
-          setting_type: 'TEXT'
-        }))
-
-        const { error: settingsError } = await supabase
-          .from('business_unit_settings')
-          .insert(settingsInserts)
-
-        if (settingsError) throw settingsError
+      if (existingUser && existingUser.length > 0) {
+        setErrors(['Email address was registered by someone else. Please go back and use a different email.'])
+        return
       }
 
-      // Handle logo upload
+      const { data: existingCompany, error: companyCheckError } = await supabase
+        .from('business_units')
+        .select('company_registration_number')
+        .eq('company_registration_number', formData.companyId)
+        .limit(1)
+
+      if (companyCheckError) throw companyCheckError
+
+      if (existingCompany && existingCompany.length > 0) {
+        setErrors(['Company House Number was registered by someone else. Please go back and use a different number.'])
+        return
+      }
+
+      // Step 2: Create Supabase Auth user
+      const { data: authData, error: authError } = await supabase.auth.signUp({
+        email: formData.workEmail,
+        password: formData.password,
+        options: {
+          emailRedirectTo: undefined
+        }
+      })
+
+      if (authError) throw authError
+      if (!authData.user) throw new Error('Failed to create authentication user')
+
+      // Step 3: Handle file uploads FIRST
       let logoUrl = null
       if (setupData.logoFile) {
-        const logoFileName = `${accountData.businessUnitId}/logo-${Date.now()}`
+        const logoFileName = `${authData.user.id}/logo-${Date.now()}`
         const { data: logoUpload, error: logoError } = await supabase.storage
           .from('business-assets')
           .upload(logoFileName, setupData.logoFile)
@@ -189,10 +182,9 @@ const GroupCompanySetup = () => {
         }
       }
 
-      // Handle favicon upload
       let faviconUrl = null
       if (setupData.faviconFile) {
-        const faviconFileName = `${accountData.businessUnitId}/favicon-${Date.now()}`
+        const faviconFileName = `${authData.user.id}/favicon-${Date.now()}`
         const { data: faviconUpload, error: faviconError } = await supabase.storage
           .from('business-assets')
           .upload(faviconFileName, setupData.faviconFile)
@@ -207,15 +199,110 @@ const GroupCompanySetup = () => {
         }
       }
 
-      // Clear localStorage
-      localStorage.removeItem('newAccountData')
+      // Step 4: Create business unit with all details
+      const { data: businessUnit, error: businessUnitError } = await supabase
+        .from('business_units')
+        .insert({
+          name: formData.groupCompanyName,
+          business_unit_type_id: '716008fd-932c-447f-abc2-3b1e9305bb59', // GROUP_MANAGEMENT
+          company_registration_number: formData.companyId,
+          address: `${setupData.companyAddress}, ${setupData.companyCity}, ${setupData.companyPostcode}`,
+          phone: setupData.companyPhone,
+          email: setupData.generalEmail || formData.workEmail,
+          vat_number: setupData.vatNumber || null,
+          tax_year_end_month: parseInt(setupData.yearEndMonth),
+          logo_url: logoUrl
+        })
+        .select()
+        .single()
 
-      // Sign in the user automatically after setup
-      // (They're already authenticated from account creation, this just ensures session)
-      
+      if (businessUnitError) throw businessUnitError
+
+      // Step 5: Create user with CEO role
+      const { data: user, error: userError } = await supabase
+        .from('users')
+        .insert({
+          id: authData.user.id,
+          email: formData.workEmail,
+          first_name: formData.firstName,
+          last_name: formData.lastName,
+          user_type_id: '771e399d-be01-427f-bfd7-5f7019c61971', // EMPLOYEE
+          job_role_id: '98711fa7-1e46-4c01-a74e-18423130fb10', // CEO
+          business_unit_id: businessUnit.id
+        })
+        .select()
+        .single()
+
+      if (userError) throw userError
+
+      // Step 6: Auto-assign Executive department
+      const { data: executiveDept, error: deptError } = await supabase
+        .from('departments')
+        .select('id')
+        .eq('name', 'Executive')
+        .single()
+
+      if (deptError) throw deptError
+
+      const { error: deptAssignError } = await supabase
+        .from('business_unit_departments')
+        .insert({
+          business_unit_id: businessUnit.id,
+          department_id: executiveDept.id,
+          manager_user_id: user.id
+        })
+
+      if (deptAssignError) throw deptAssignError
+
+      // Step 7: Store additional settings
+      const settingsToStore = [
+        { key: 'general_email', value: setupData.generalEmail },
+        { key: 'accounts_email', value: setupData.accountsEmail },
+        { key: 'support_email', value: setupData.supportEmail },
+        { key: 'customer_care_email', value: setupData.customerCareEmail },
+        { key: 'paye_number', value: setupData.payeNumber },
+        { key: 'cis_number', value: setupData.cisNumber },
+        { key: 'favicon_url', value: faviconUrl || '' }
+      ].filter(setting => setting.value.trim() !== '')
+
+      if (settingsToStore.length > 0) {
+        const settingsInserts = settingsToStore.map(setting => ({
+          business_unit_id: businessUnit.id,
+          setting_key: setting.key,
+          setting_value: setting.value,
+          setting_type: 'TEXT'
+        }))
+
+        const { error: settingsError } = await supabase
+          .from('business_unit_settings')
+          .insert(settingsInserts)
+
+        if (settingsError) throw settingsError
+      }
+
+      // Step 8: Update favicon if uploaded
+      if (faviconUrl) {
+        const favicon = document.querySelector('link[rel="icon"]') as HTMLLinkElement
+        if (favicon) {
+          favicon.href = faviconUrl
+        } else {
+          const newFavicon = document.createElement('link')
+          newFavicon.rel = 'icon'
+          newFavicon.href = faviconUrl
+          document.head.appendChild(newFavicon)
+        }
+      }
+
+      // Clear localStorage
+      localStorage.removeItem('accountCreationData')
+
       // Redirect to dashboard
-      const companySlug = accountData.companyName.toLowerCase().replace(/\s+/g, '-')
-      navigate(`/${companySlug}/dashboard`)
+      const companySlug = formData.groupCompanyName.toLowerCase().replace(/\s+/g, '-')
+      console.log('Account creation complete! Redirecting to dashboard:', `/${companySlug}/dashboard`)
+      
+      setTimeout(() => {
+        navigate(`/${companySlug}/dashboard`)
+      }, 100)
 
     } catch (error) {
       console.error('Company setup error:', error)
@@ -239,7 +326,7 @@ const GroupCompanySetup = () => {
         <div className="company-setup-card">
           <div className="company-setup-header">
             <h1>Complete Company Setup</h1>
-            <p>Configure your group management company: <strong>{accountData.companyName}</strong></p>
+            <p>Configure your group management company: <strong>{accountData.formData.groupCompanyName}</strong></p>
           </div>
 
           <form onSubmit={handleSubmit} className="company-setup-form">
@@ -475,11 +562,19 @@ const GroupCompanySetup = () => {
             {/* Form Actions */}
             <div className="form-actions">
               <button
+                type="button"
+                onClick={handleGoBack}
+                className="back-button"
+                disabled={isLoading}
+              >
+                ← Back to Account Details
+              </button>
+              <button
                 type="submit"
                 className="submit-button"
                 disabled={isLoading}
               >
-                {isLoading ? 'Setting up Company...' : 'Complete Setup'}
+                {isLoading ? 'Creating Account...' : 'Complete Setup'}
               </button>
             </div>
           </form>
