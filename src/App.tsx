@@ -15,6 +15,7 @@ import EquipmentCategoryDetail from './components/EquipmentCategoryDetail.tsx'
 import EquipmentCreationWizard from './components/EquipmentCreationWizard.tsx'
 import EmployeeManagement from './components/EmployeeManagement.tsx'
 import RegionalEmployeeManagement from './components/RegionalEmployeeManagement.tsx'
+import AddBusinessUnit from './components/AddBusinessUnit.tsx'
 import './App.css'
 
 function App() {
@@ -39,6 +40,7 @@ function App() {
             <Route path="services" element={<ServiceManagement />} />
             <Route path="business-management" element={<Dashboard />} />
             <Route path="business-management/employees" element={<EmployeeManagement />} />
+            <Route path="business-management/add-business-unit" element={<AddBusinessUnit />} />
             <Route path="executive" element={<Dashboard />} />
             <Route path="group-sales" element={<Dashboard />} />
             <Route path="group-accounts" element={<Dashboard />} />
