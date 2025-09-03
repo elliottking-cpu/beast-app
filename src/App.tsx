@@ -14,8 +14,9 @@ import EquipmentCategoriesManagement from './components/EquipmentCategoriesManag
 import EquipmentCategoryDetail from './components/EquipmentCategoryDetail.tsx'
 import EquipmentCreationWizard from './components/EquipmentCreationWizard.tsx'
 import EmployeeManagement from './components/EmployeeManagement.tsx'
-import RegionalEmployeeManagement from './components/RegionalEmployeeManagement.tsx'
+import RegionalEmployees from './components/RegionalEmployees.tsx'
 import AddBusinessUnit from './components/AddBusinessUnit.tsx'
+import EmployeeDetail from './components/EmployeeDetail.tsx'
 import './App.css'
 
 function App() {
@@ -40,6 +41,7 @@ function App() {
             <Route path="services" element={<ServiceManagement />} />
             <Route path="business-management" element={<Dashboard />} />
             <Route path="business-management/employees" element={<EmployeeManagement />} />
+            <Route path="business-management/employees/:employeeId" element={<EmployeeDetail />} />
             <Route path="business-management/add-business-unit" element={<AddBusinessUnit />} />
             <Route path="executive" element={<Dashboard />} />
             <Route path="group-sales" element={<Dashboard />} />
@@ -55,7 +57,8 @@ function App() {
             <Route path="surveying" element={<Dashboard />} />
             <Route path="construction" element={<Dashboard />} />
             <Route path="hr" element={<Dashboard />} />
-            <Route path="hr/employees" element={<RegionalEmployeeManagement />} />
+            <Route path="hr/employees" element={<RegionalEmployees />} />
+            <Route path="hr/employees/:employeeId" element={<EmployeeDetail />} />
             <Route path="accounts" element={<Dashboard />} />
             <Route index element={<Dashboard />} />
           </Route>

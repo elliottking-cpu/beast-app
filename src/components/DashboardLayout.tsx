@@ -579,28 +579,76 @@ const DashboardLayout = ({ currentPage = 'Dashboard' }: DashboardLayoutProps) =>
                       </button>
                       {!isSideMenuCollapsed && hasDepartments && isExpanded && (
                         <ul className="nav-sublist">
-                          {childBusinessUnitDepartments[unit.id].map(dept => (
-                            <li key={dept.id} className="nav-subitem">
-                              <Link to={`/${unit.name?.toLowerCase().replace(/\s+/g, '-') || 'unit'}${dept.name === 'HR' ? '/hr/employees' : dept.menu_path || '#'}`} className="nav-link">
-                                <svg className="nav-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                                  {dept.name === 'HR' && (
-                                    <>
-                                      <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" />
-                                      <circle cx="9" cy="7" r="4" />
-                                    </>
-                                  )}
-                                  {dept.name !== 'HR' && (
-                                    <>
+                          {childBusinessUnitDepartments[unit.id].map(dept => {
+                            const isHRDept = dept.name === 'HR'
+                            const isHRExpanded = expandedDepartments[`${unit.id}-${dept.id}`]
+                            
+                            return (
+                              <li key={dept.id} className="nav-subitem">
+                                {isHRDept ? (
+                                  // HR Department with collapsible submenu
+                                  <>
+                                    <button 
+                                      className="nav-link nav-group-header"
+                                      onClick={() => toggleDepartmentExpansion(`${unit.id}-${dept.id}`)}
+                                    >
+                                      <svg className="nav-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                        <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" />
+                                        <circle cx="9" cy="7" r="4" />
+                                        <line x1="19" y1="8" x2="19" y2="14" />
+                                        <line x1="22" y1="11" x2="16" y2="11" />
+                                      </svg>
+                                      <span className="nav-text">HR</span>
+                                      <svg 
+                                        className={`nav-expand-icon ${isHRExpanded ? 'expanded' : ''}`} 
+                                        width="16" 
+                                        height="16" 
+                                        viewBox="0 0 24 24" 
+                                        fill="none" 
+                                        stroke="currentColor" 
+                                        strokeWidth="2"
+                                      >
+                                        <path d="M9 18l6-6-6-6" />
+                                      </svg>
+                                    </button>
+                                    {isHRExpanded && (
+                                      <ul className="nav-sublist">
+                                        <li className="nav-subitem">
+                                          <Link to={`/${unit.name?.toLowerCase().replace(/\s+/g, '-') || 'unit'}/hr`} className="nav-link">
+                                            <svg className="nav-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                              <rect x="3" y="3" width="18" height="18" rx="2" ry="2" />
+                                              <line x1="9" y1="9" x2="15" y2="9" />
+                                              <line x1="9" y1="15" x2="15" y2="15" />
+                                            </svg>
+                                            <span className="nav-text">Dashboard</span>
+                                          </Link>
+                                        </li>
+                                        <li className="nav-subitem">
+                                          <Link to={`/${unit.name?.toLowerCase().replace(/\s+/g, '-') || 'unit'}/hr/employees`} className="nav-link">
+                                            <svg className="nav-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                              <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" />
+                                              <circle cx="9" cy="7" r="4" />
+                                            </svg>
+                                            <span className="nav-text">Employees</span>
+                                          </Link>
+                                        </li>
+                                      </ul>
+                                    )}
+                                  </>
+                                ) : (
+                                  // Other departments (non-HR)
+                                  <Link to={`/${unit.name?.toLowerCase().replace(/\s+/g, '-') || 'unit'}${dept.menu_path || '#'}`} className="nav-link">
+                                    <svg className="nav-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                                       <circle cx="12" cy="12" r="3" />
                                       <path d="M12 1v6m0 6v6" />
                                       <path d="m21 12-6 0m-6 0-6 0" />
-                                    </>
-                                  )}
-                                </svg>
-                                <span className="nav-text">{dept.name === 'HR' ? 'Employee Management' : dept.name}</span>
-                              </Link>
-                            </li>
-                          ))}
+                                    </svg>
+                                    <span className="nav-text">{dept.name}</span>
+                                  </Link>
+                                )}
+                              </li>
+                            )
+                          })}
                         </ul>
                       )}
                     </li>

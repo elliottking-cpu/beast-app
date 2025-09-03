@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { useParams } from 'react-router-dom'
+import { useParams, Link } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import './EmployeeManagement.css'
 
@@ -12,6 +12,7 @@ interface Employee {
   job_role: string
   business_unit: string
   department_id: string | null
+  department_name: string
   is_active: boolean
   last_login: string | null
   created_at: string
@@ -25,7 +26,7 @@ interface BusinessUnit {
 interface JobRole {
   id: string
   name: string
-  user_type: string
+  user_type_id: string
 }
 
 interface Department {
@@ -43,18 +44,31 @@ const EmployeeManagement = () => {
   const [searchQuery, setSearchQuery] = useState('')
   const [filterBusinessUnit, setFilterBusinessUnit] = useState('all')
   const [filterJobRole, setFilterJobRole] = useState('all')
+  const [filterDepartment, setFilterDepartment] = useState('all')
+  const [filterSkill, setFilterSkill] = useState('all')
   const [filterStatus, setFilterStatus] = useState('all')
   const [showAddEmployee, setShowAddEmployee] = useState(false)
+  
+  // Skills data for filtering
+  const [availableSkills, setAvailableSkills] = useState<{id: string, name: string}[]>([])
+  const [employeeSkillsMap, setEmployeeSkillsMap] = useState<{[employeeId: string]: {skill_name: string, proficiency_level: string}[]}>({})
 
   useEffect(() => {
     loadEmployeeData()
   }, [])
 
+  useEffect(() => {
+    if (employees.length > 0) {
+      fetchEmployeeSkills()
+      fetchAvailableSkills()
+    }
+  }, [employees])
+
   const loadEmployeeData = async () => {
     try {
       setIsLoading(true)
 
-      // Load employees with related data
+      // Load employees with basic data and foreign key IDs
       const { data: employeeData, error: employeeError } = await supabase
         .from('users')
         .select(`
@@ -63,80 +77,147 @@ const EmployeeManagement = () => {
           last_name,
           email,
           department_id,
+          business_unit_id,
+          job_role_id,
+          user_type_id,
           is_active,
           last_login,
-          created_at,
-          user_types (name),
-          job_roles (name),
-          business_units (name)
+          created_at
         `)
-        .eq('user_types.name', 'EMPLOYEE')
+        .not('first_name', 'is', null)
+        .not('last_name', 'is', null)
         .order('last_name')
 
       if (employeeError) throw employeeError
 
-      const formattedEmployees = employeeData?.map(emp => ({
+      // Get all unique IDs for batch fetching
+      const userTypeIds = [...new Set(employeeData?.map(emp => emp.user_type_id).filter(Boolean) || [])]
+      const jobRoleIds = [...new Set(employeeData?.map(emp => emp.job_role_id).filter(Boolean) || [])]
+      const businessUnitIds = [...new Set(employeeData?.map(emp => emp.business_unit_id).filter(Boolean) || [])]
+      const departmentIds = [...new Set(employeeData?.map(emp => emp.department_id).filter(Boolean) || [])]
+
+      // Fetch all related data in parallel
+      const [userTypesResult, jobRolesResult, businessUnitsResult, departmentsResult] = await Promise.all([
+        userTypeIds.length > 0 ? supabase.from('user_types').select('id, name').in('id', userTypeIds) : { data: [], error: null },
+        jobRoleIds.length > 0 ? supabase.from('job_roles').select('id, name').in('id', jobRoleIds) : { data: [], error: null },
+        businessUnitIds.length > 0 ? supabase.from('business_units').select('id, name').in('id', businessUnitIds) : { data: [], error: null },
+        departmentIds.length > 0 ? supabase.from('departments').select('id, name').in('id', departmentIds) : { data: [], error: null }
+      ])
+
+      // Create lookup maps
+      const userTypeMap = (userTypesResult.data || []).reduce((acc, item) => { acc[item.id] = item.name; return acc }, {} as Record<string, string>)
+      const jobRoleMap = (jobRolesResult.data || []).reduce((acc, item) => { acc[item.id] = item.name; return acc }, {} as Record<string, string>)
+      const businessUnitMap = (businessUnitsResult.data || []).reduce((acc, item) => { acc[item.id] = item.name; return acc }, {} as Record<string, string>)
+      const departmentMap = (departmentsResult.data || []).reduce((acc, item) => { acc[item.id] = item.name; return acc }, {} as Record<string, string>)
+
+      // Filter for employees only and format the data
+      const employeeOnlyData = employeeData?.filter(emp => 
+        userTypeMap[emp.user_type_id] === 'EMPLOYEE'
+      ) || []
+
+      const formattedEmployees = employeeOnlyData.map(emp => ({
         id: emp.id,
         first_name: emp.first_name,
         last_name: emp.last_name,
         email: emp.email,
-        user_type: (emp.user_types as any)?.name || 'Unknown',
-        job_role: (emp.job_roles as any)?.name || 'Unknown',
-        business_unit: (emp.business_units as any)?.name || 'Unassigned',
+        user_type: userTypeMap[emp.user_type_id] || 'Unknown',
+        job_role: jobRoleMap[emp.job_role_id] || 'Unknown',
+        business_unit: businessUnitMap[emp.business_unit_id] || 'Unassigned',
         department_id: emp.department_id,
+        department_name: emp.department_id ? (departmentMap[emp.department_id] || 'Unknown Department') : 'Unassigned',
         is_active: emp.is_active,
         last_login: emp.last_login,
         created_at: emp.created_at
-      })) || []
+      }))
 
       setEmployees(formattedEmployees)
 
-      // Load business units
-      const { data: businessUnitData, error: businessUnitError } = await supabase
-        .from('business_units')
-        .select('id, name')
-        .eq('is_active', true)
-        .order('name')
+      // Use the data we already fetched for dropdowns
+      setBusinessUnits(businessUnitsResult.data || [])
+      setDepartments(departmentsResult.data || [])
 
-      if (businessUnitError) throw businessUnitError
-      setBusinessUnits(businessUnitData || [])
-
-      // Load job roles for employees
+      // Load job roles for employees (avoiding relationship issues)
       const { data: jobRoleData, error: jobRoleError } = await supabase
         .from('job_roles')
-        .select(`
-          id,
-          name,
-          user_types (name)
-        `)
-        .eq('user_types.name', 'EMPLOYEE')
+        .select('id, name, user_type_id')
         .eq('is_active', true)
         .order('name')
 
       if (jobRoleError) throw jobRoleError
+      
+      // Filter job roles for employees only
+      const employeeUserTypeId = Object.keys(userTypeMap).find(id => userTypeMap[id] === 'EMPLOYEE')
+      const employeeJobRoles = employeeUserTypeId 
+        ? jobRoleData?.filter(role => role.user_type_id === employeeUserTypeId) || []
+        : []
 
-      const formattedJobRoles = jobRoleData?.map(jr => ({
-        id: jr.id,
-        name: jr.name,
-        user_type: (jr.user_types as any)?.name || 'Unknown'
-      })) || []
-
-      setJobRoles(formattedJobRoles)
-
-      // Load departments
-      const { data: departmentData, error: departmentError } = await supabase
-        .from('departments')
-        .select('id, name')
-        .eq('is_active', true)
-        .order('name')
-
-      if (departmentError) throw departmentError
-      setDepartments(departmentData || [])
+      setJobRoles(employeeJobRoles)
 
     } catch (error) {
       console.error('Error loading employee data:', error)
     } finally {
       setIsLoading(false)
+    }
+  }
+
+  const fetchEmployeeSkills = async () => {
+    try {
+      if (employees.length === 0) return
+
+      const employeeIds = employees.map(emp => emp.id)
+
+      const { data, error } = await supabase
+        .from('employee_skills')
+        .select(`
+          user_id,
+          proficiency_level,
+          skills (
+            name
+          )
+        `)
+        .in('user_id', employeeIds)
+        .eq('is_active', true)
+
+      if (error) throw error
+
+      // Create a map of employee ID to their skills
+      const skillsMap: {[employeeId: string]: {skill_name: string, proficiency_level: string}[]} = {}
+      
+      (data || []).forEach(skillRecord => {
+        const employeeId = skillRecord.user_id
+        const skillName = (skillRecord.skills as any)?.name || 'Unknown Skill'
+        
+        if (!skillsMap[employeeId]) {
+          skillsMap[employeeId] = []
+        }
+        
+        skillsMap[employeeId].push({
+          skill_name: skillName,
+          proficiency_level: skillRecord.proficiency_level
+        })
+      })
+
+      setEmployeeSkillsMap(skillsMap)
+
+    } catch (error) {
+      console.error('Error fetching employee skills:', error)
+    }
+  }
+
+  const fetchAvailableSkills = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('skills')
+        .select('id, name')
+        .eq('is_active', true)
+        .order('name')
+
+      if (error) throw error
+
+      setAvailableSkills(data || [])
+
+    } catch (error) {
+      console.error('Error fetching available skills:', error)
     }
   }
 
@@ -149,11 +230,14 @@ const EmployeeManagement = () => {
 
     const matchesBusinessUnit = filterBusinessUnit === 'all' || employee.business_unit === filterBusinessUnit
     const matchesJobRole = filterJobRole === 'all' || employee.job_role === filterJobRole
+    const matchesDepartment = filterDepartment === 'all' || employee.department_name === filterDepartment
+    const matchesSkill = filterSkill === 'all' || 
+      employeeSkillsMap[employee.id]?.some(skill => skill.skill_name === filterSkill)
     const matchesStatus = filterStatus === 'all' || 
       (filterStatus === 'active' && employee.is_active) ||
       (filterStatus === 'inactive' && !employee.is_active)
 
-    return matchesSearch && matchesBusinessUnit && matchesJobRole && matchesStatus
+    return matchesSearch && matchesBusinessUnit && matchesJobRole && matchesDepartment && matchesSkill && matchesStatus
   })
 
   const formatDate = (dateString: string | null) => {
@@ -260,6 +344,28 @@ const EmployeeManagement = () => {
             </select>
 
             <select 
+              value={filterDepartment} 
+              onChange={(e) => setFilterDepartment(e.target.value)}
+              className="filter-select"
+            >
+              <option value="all">All Departments</option>
+              {departments.map(dept => (
+                <option key={dept.id} value={dept.name}>{dept.name}</option>
+              ))}
+            </select>
+
+            <select 
+              value={filterSkill} 
+              onChange={(e) => setFilterSkill(e.target.value)}
+              className="filter-select"
+            >
+              <option value="all">All Skills</option>
+              {availableSkills.map(skill => (
+                <option key={skill.id} value={skill.name}>{skill.name}</option>
+              ))}
+            </select>
+
+            <select 
               value={filterStatus} 
               onChange={(e) => setFilterStatus(e.target.value)}
               className="filter-select"
@@ -311,6 +417,7 @@ const EmployeeManagement = () => {
                 <th>Employee</th>
                 <th>Job Role</th>
                 <th>Business Unit</th>
+                <th>Department</th>
                 <th>Status</th>
                 <th>Last Login</th>
                 <th>Actions</th>
@@ -319,7 +426,7 @@ const EmployeeManagement = () => {
             <tbody>
               {filteredEmployees.length === 0 ? (
                 <tr>
-                  <td colSpan={6} className="no-data">
+                  <td colSpan={7} className="no-data">
                     {searchQuery || filterBusinessUnit !== 'all' || filterJobRole !== 'all' || filterStatus !== 'all' 
                       ? 'No employees match your search criteria' 
                       : 'No employees found'}
@@ -335,7 +442,12 @@ const EmployeeManagement = () => {
                         </div>
                         <div className="employee-details">
                           <div className="employee-name">
-                            {employee.first_name} {employee.last_name}
+                            <Link 
+                              to={`business-management/employees/${employee.id}`}
+                              className="employee-name-link"
+                            >
+                              {employee.first_name} {employee.last_name}
+                            </Link>
                           </div>
                           <div className="employee-email">{employee.email}</div>
                         </div>
@@ -345,6 +457,7 @@ const EmployeeManagement = () => {
                       <span className="job-role-badge">{employee.job_role}</span>
                     </td>
                     <td>{employee.business_unit}</td>
+                    <td>{employee.department_name}</td>
                     <td>{getStatusBadge(employee.is_active, employee.last_login)}</td>
                     <td>{formatDate(employee.last_login)}</td>
                     <td>
