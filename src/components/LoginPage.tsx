@@ -25,34 +25,43 @@ const LoginPage = () => {
       if (authError) throw authError
 
       if (authData.user) {
-        // Get user's business unit information
+        // Get user data first (without problematic joins)
         const { data: userData, error: userError } = await supabase
           .from('users')
           .select(`
             id,
             first_name,
             last_name,
-            business_unit_id,
-            business_units (
-              name,
-              business_unit_type_id
-            )
+            business_unit_id
           `)
           .eq('email', email)
           .single()
 
         if (userError) throw userError
 
-        if (userData && userData.business_units) {
-          // Update last login
-          await supabase
-            .from('users')
-            .update({ last_login: new Date().toISOString() })
-            .eq('id', userData.id)
+        if (userData && userData.business_unit_id) {
+          // Get business unit information separately
+          const { data: businessUnitData, error: businessUnitError } = await supabase
+            .from('business_units')
+            .select('name, business_unit_type_id')
+            .eq('id', userData.business_unit_id)
+            .single()
 
-          // Redirect to their dashboard
-          const companySlug = userData.business_units.name.toLowerCase().replace(/\s+/g, '-')
-          navigate(`/${companySlug}/dashboard`)
+          if (businessUnitError) throw businessUnitError
+
+          if (businessUnitData) {
+            // Update last login
+            await supabase
+              .from('users')
+              .update({ last_login: new Date().toISOString() })
+              .eq('id', userData.id)
+
+            // Redirect to their dashboard
+            const companySlug = businessUnitData.name.toLowerCase().replace(/\s+/g, '-')
+            navigate(`/${companySlug}/dashboard`)
+          } else {
+            throw new Error('Business unit not found')
+          }
         } else {
           throw new Error('User business unit not found')
         }
