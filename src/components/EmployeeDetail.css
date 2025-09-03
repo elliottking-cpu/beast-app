@@ -1,0 +1,513 @@
+/* Employee Detail Page Styles */
+
+.employee-subtitle {
+  color: #6b7280;
+  font-size: 0.95rem;
+  margin: 0.25rem 0 0 0;
+}
+
+.back-button {
+  background: none;
+  border: none;
+  color: #4f46e5;
+  cursor: pointer;
+  font-size: 0.95rem;
+  padding: 0.5rem 0;
+  margin-right: 1rem;
+  text-decoration: none;
+  transition: color 0.2s ease;
+}
+
+.back-button:hover {
+  color: #3730a3;
+  text-decoration: underline;
+}
+
+/* Overview Cards */
+.employee-overview-cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 1.5rem;
+  margin: 2rem 0;
+}
+
+.overview-card {
+  background: white;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  padding: 1.5rem;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.overview-card h3 {
+  margin: 0 0 1rem 0;
+  color: #1f2937;
+  font-size: 1.1rem;
+  font-weight: 600;
+}
+
+.card-content p {
+  margin: 0.5rem 0;
+  color: #4b5563;
+  font-size: 0.9rem;
+}
+
+.card-content strong {
+  color: #1f2937;
+  font-weight: 500;
+}
+
+/* Tabs */
+.employee-tabs {
+  display: flex;
+  border-bottom: 2px solid #e5e7eb;
+  margin: 2rem 0 0 0;
+  overflow-x: auto;
+}
+
+.tab-button {
+  background: none;
+  border: none;
+  padding: 1rem 1.5rem;
+  cursor: pointer;
+  font-size: 0.95rem;
+  font-weight: 500;
+  color: #6b7280;
+  border-bottom: 3px solid transparent;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+}
+
+.tab-button:hover {
+  color: #4f46e5;
+  background-color: #f8fafc;
+}
+
+.tab-button.active {
+  color: #4f46e5;
+  border-bottom-color: #4f46e5;
+  background-color: #f8fafc;
+}
+
+/* Tab Content */
+.tab-content {
+  padding: 2rem 0;
+}
+
+/* Overview Tab */
+.section-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+  gap: 2rem;
+}
+
+.section-card {
+  background: white;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  padding: 1.5rem;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.section-card h3 {
+  margin: 0 0 1.5rem 0;
+  color: #1f2937;
+  font-size: 1.1rem;
+  font-weight: 600;
+}
+
+/* Activity List */
+.activity-list {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.activity-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1rem;
+  background: #f9fafb;
+  border-radius: 6px;
+  border: 1px solid #f3f4f6;
+}
+
+.activity-info p {
+  margin: 0;
+}
+
+.activity-info p:first-child {
+  color: #1f2937;
+  font-weight: 500;
+}
+
+.activity-date {
+  color: #6b7280;
+  font-size: 0.85rem;
+}
+
+/* Renewals List */
+.renewals-list {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.renewal-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1rem;
+  background: #f9fafb;
+  border-radius: 6px;
+  border: 1px solid #f3f4f6;
+}
+
+.renewal-info p {
+  margin: 0;
+}
+
+.renewal-info p:first-child {
+  color: #1f2937;
+  font-weight: 500;
+}
+
+.renewal-date {
+  color: #6b7280;
+  font-size: 0.85rem;
+}
+
+.renewal-urgency {
+  padding: 0.25rem 0.75rem;
+  border-radius: 12px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+}
+
+.renewal-urgency:contains("EXPIRED") {
+  background: #fee2e2;
+  color: #dc2626;
+}
+
+.renewal-urgency:contains("URGENT") {
+  background: #fef3c7;
+  color: #d97706;
+}
+
+.renewal-urgency:contains("SOON") {
+  background: #fef3c7;
+  color: #d97706;
+}
+
+.renewal-urgency:contains("UPCOMING") {
+  background: #dbeafe;
+  color: #2563eb;
+}
+
+/* Section Headers */
+.section-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1.5rem;
+}
+
+.section-header h3 {
+  margin: 0;
+  color: #1f2937;
+  font-size: 1.2rem;
+  font-weight: 600;
+}
+
+/* Tables */
+.skills-table-container,
+.licenses-table-container,
+.equipment-table-container,
+.jobs-table-container,
+.forms-table-container {
+  background: white;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.skills-table,
+.licenses-table,
+.equipment-table,
+.jobs-table,
+.forms-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.skills-table th,
+.licenses-table th,
+.equipment-table th,
+.jobs-table th,
+.forms-table th {
+  background: #f9fafb;
+  padding: 1rem;
+  text-align: left;
+  font-weight: 600;
+  color: #374151;
+  border-bottom: 1px solid #e5e7eb;
+  font-size: 0.9rem;
+}
+
+.skills-table td,
+.licenses-table td,
+.equipment-table td,
+.jobs-table td,
+.forms-table td {
+  padding: 1rem;
+  border-bottom: 1px solid #f3f4f6;
+  color: #4b5563;
+  font-size: 0.9rem;
+}
+
+.skills-table tr:hover,
+.licenses-table tr:hover,
+.equipment-table tr:hover,
+.jobs-table tr:hover,
+.forms-table tr:hover {
+  background: #f9fafb;
+}
+
+/* Status Badges */
+.status-badge {
+  padding: 0.25rem 0.75rem;
+  border-radius: 12px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+}
+
+.status-badge.active {
+  background: #dcfce7;
+  color: #16a34a;
+}
+
+.status-badge.inactive {
+  background: #fee2e2;
+  color: #dc2626;
+}
+
+.status-badge.warning {
+  background: #fef3c7;
+  color: #d97706;
+}
+
+.status-badge.pending {
+  background: #e0e7ff;
+  color: #4338ca;
+}
+
+/* Proficiency Badges */
+.proficiency-badge {
+  padding: 0.25rem 0.75rem;
+  border-radius: 12px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+}
+
+.proficiency-badge.trainee {
+  background: #fef3c7;
+  color: #d97706;
+}
+
+.proficiency-badge.competent {
+  background: #dbeafe;
+  color: #2563eb;
+}
+
+.proficiency-badge.expert {
+  background: #dcfce7;
+  color: #16a34a;
+}
+
+/* Points Display */
+.points-ok {
+  color: #16a34a;
+  font-weight: 600;
+}
+
+.points-warning {
+  color: #dc2626;
+  font-weight: 600;
+}
+
+/* License Status */
+.license-valid {
+  color: #16a34a;
+  font-weight: 600;
+}
+
+.license-missing {
+  color: #dc2626;
+  font-weight: 600;
+}
+
+/* Assignment Status */
+.assignment-active {
+  color: #16a34a;
+  font-weight: 600;
+}
+
+.assignment-ended {
+  color: #6b7280;
+  font-weight: 500;
+}
+
+/* No Data Messages */
+.no-data {
+  color: #6b7280;
+  font-style: italic;
+  text-align: center;
+  padding: 1rem;
+}
+
+.no-data-message {
+  text-align: center;
+  padding: 3rem;
+  color: #6b7280;
+}
+
+.no-data-message p {
+  margin: 0;
+  font-size: 1rem;
+}
+
+/* Loading and Error States */
+.loading-container,
+.error-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 4rem 2rem;
+  text-align: center;
+}
+
+.loading-spinner {
+  width: 40px;
+  height: 40px;
+  border: 4px solid #f3f4f6;
+  border-top: 4px solid #4f46e5;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+  margin-bottom: 1rem;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+.error-container h2 {
+  color: #dc2626;
+  margin-bottom: 1rem;
+}
+
+.error-container p {
+  color: #6b7280;
+  margin-bottom: 2rem;
+}
+
+/* Buttons */
+.btn-small {
+  padding: 0.375rem 0.75rem;
+  font-size: 0.8rem;
+  border-radius: 4px;
+  border: 1px solid #d1d5db;
+  background: white;
+  color: #374151;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.btn-small:hover {
+  background: #f9fafb;
+  border-color: #9ca3af;
+}
+
+/* Holiday Placeholder */
+.holidays-placeholder {
+  background: white;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  padding: 2rem;
+  text-align: center;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.placeholder-card h4 {
+  color: #1f2937;
+  margin-bottom: 1rem;
+}
+
+.placeholder-card p {
+  color: #6b7280;
+  margin-bottom: 1rem;
+}
+
+.placeholder-card ul {
+  text-align: left;
+  max-width: 400px;
+  margin: 1rem auto;
+  color: #4b5563;
+}
+
+.placeholder-card li {
+  margin: 0.5rem 0;
+}
+
+.placeholder-card em {
+  color: #9ca3af;
+  font-size: 0.9rem;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .employee-overview-cards {
+    grid-template-columns: 1fr;
+  }
+  
+  .section-grid {
+    grid-template-columns: 1fr;
+  }
+  
+  .section-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 1rem;
+  }
+  
+  .employee-tabs {
+    flex-wrap: wrap;
+  }
+  
+  .tab-button {
+    flex: 1;
+    min-width: 120px;
+  }
+  
+  .skills-table-container,
+  .licenses-table-container,
+  .equipment-table-container,
+  .jobs-table-container,
+  .forms-table-container {
+    overflow-x: auto;
+  }
+  
+  .skills-table,
+  .licenses-table,
+  .equipment-table,
+  .jobs-table,
+  .forms-table {
+    min-width: 800px;
+  }
+}

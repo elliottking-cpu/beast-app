@@ -123,7 +123,7 @@ const GroupCompanySetup = () => {
       // Get the stored account creation data
       const formData = accountData.formData
 
-      // Step 1: Re-validate email and company ID (in case someone else registered between steps)
+      // Step 1: Re-validate email and company ID
       console.log('Re-validating email and company ID...')
       
       const { data: existingUser, error: userCheckError } = await supabase
@@ -157,14 +157,14 @@ const GroupCompanySetup = () => {
         email: formData.workEmail,
         password: formData.password,
         options: {
-          emailRedirectTo: undefined // Don't send confirmation email
+          emailRedirectTo: undefined
         }
       })
 
       if (authError) throw authError
       if (!authData.user) throw new Error('Failed to create authentication user')
 
-      // Step 2: Handle file uploads first
+      // Step 3: Handle file uploads FIRST
       let logoUrl = null
       if (setupData.logoFile) {
         const logoFileName = `${authData.user.id}/logo-${Date.now()}`
@@ -199,7 +199,7 @@ const GroupCompanySetup = () => {
         }
       }
 
-      // Step 3: Create business unit with all details
+      // Step 4: Create business unit with all details
       const { data: businessUnit, error: businessUnitError } = await supabase
         .from('business_units')
         .insert({
@@ -218,7 +218,7 @@ const GroupCompanySetup = () => {
 
       if (businessUnitError) throw businessUnitError
 
-      // Step 4: Create user with CEO role
+      // Step 5: Create user with CEO role
       const { data: user, error: userError } = await supabase
         .from('users')
         .insert({
@@ -235,7 +235,7 @@ const GroupCompanySetup = () => {
 
       if (userError) throw userError
 
-      // Step 5: Auto-assign Executive department
+      // Step 6: Auto-assign Executive department
       const { data: executiveDept, error: deptError } = await supabase
         .from('departments')
         .select('id')
@@ -254,7 +254,7 @@ const GroupCompanySetup = () => {
 
       if (deptAssignError) throw deptAssignError
 
-      // Step 6: Store additional settings
+      // Step 7: Store additional settings
       const settingsToStore = [
         { key: 'general_email', value: setupData.generalEmail },
         { key: 'accounts_email', value: setupData.accountsEmail },
@@ -280,7 +280,7 @@ const GroupCompanySetup = () => {
         if (settingsError) throw settingsError
       }
 
-      // Update favicon if uploaded
+      // Step 8: Update favicon if uploaded
       if (faviconUrl) {
         const favicon = document.querySelector('link[rel="icon"]') as HTMLLinkElement
         if (favicon) {
@@ -326,7 +326,7 @@ const GroupCompanySetup = () => {
         <div className="company-setup-card">
           <div className="company-setup-header">
             <h1>Complete Company Setup</h1>
-            <p>Configure your group management company: <strong>{accountData.companyName}</strong></p>
+            <p>Configure your group management company: <strong>{accountData.formData.groupCompanyName}</strong></p>
           </div>
 
           <form onSubmit={handleSubmit} className="company-setup-form">
