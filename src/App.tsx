@@ -17,6 +17,13 @@ import EmployeeManagement from './components/EmployeeManagement.tsx'
 import RegionalEmployees from './components/RegionalEmployees.tsx'
 import AddBusinessUnit from './components/AddBusinessUnit.tsx'
 import EmployeeDetail from './components/EmployeeDetail.tsx'
+import ClientManagement from './components/ClientManagement.tsx'
+import ClientDetail from './components/ClientDetail.tsx'
+import PropertyManagement from './components/PropertyManagement.tsx'
+import PropertyDetail from './components/PropertyDetail.tsx'
+import RegionalDashboard from './components/RegionalDashboard.tsx'
+import ScheduleManagement from './components/ScheduleManagement.tsx'
+import LeadManagement from './components/LeadManagement.tsx'
 import './App.css'
 
 function App() {
@@ -31,7 +38,7 @@ function App() {
           
           {/* Dashboard Layout with nested routes */}
           <Route path="/:companyName/*" element={<DashboardLayout />}>
-            <Route path="dashboard" element={<Dashboard />} />
+            <Route path="dashboard" element={<RegionalDashboard />} />
             <Route path="equipment" element={<EquipmentManagement />} />
             <Route path="equipment/add" element={<EquipmentCreationWizard />} />
             <Route path="equipment/categories" element={<EquipmentCategoriesManagement />} />
@@ -52,15 +59,23 @@ function App() {
             <Route path="group-hr" element={<Dashboard />} />
             <Route path="group-marketing" element={<Dashboard />} />
             <Route path="group-app-settings" element={<Dashboard />} />
-            <Route path="sales" element={<Dashboard />} />
-            <Route path="transport" element={<Dashboard />} />
-            <Route path="surveying" element={<Dashboard />} />
-            <Route path="construction" element={<Dashboard />} />
-            <Route path="hr" element={<Dashboard />} />
+            <Route path="sales" element={<RegionalDashboard />} />
+            <Route path="sales/leads" element={<LeadManagement />} />
+            <Route path="transport" element={<RegionalDashboard />} />
+            <Route path="surveying" element={<RegionalDashboard />} />
+            <Route path="construction" element={<RegionalDashboard />} />
+            <Route path="hr" element={<RegionalDashboard />} />
             <Route path="hr/employees" element={<RegionalEmployees />} />
             <Route path="hr/employees/:employeeId" element={<EmployeeDetail />} />
-            <Route path="accounts" element={<Dashboard />} />
-            <Route index element={<Dashboard />} />
+            <Route path="accounts" element={<RegionalDashboard />} />
+            <Route path="clients" element={<ClientManagement />} />
+            <Route path="clients/add" element={<ClientManagement />} />
+            <Route path="clients/:clientId" element={<ClientDetail />} />
+            <Route path="properties" element={<PropertyManagement />} />
+            <Route path="properties/add" element={<PropertyManagement />} />
+            <Route path="properties/:propertyId" element={<PropertyDetail />} />
+            <Route path="schedule" element={<ScheduleManagement />} />
+            <Route index element={<RegionalDashboard />} />
           </Route>
         </Routes>
     </Router>

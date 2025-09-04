@@ -1866,3 +1866,110 @@
   transform: translateY(-1px);
   box-shadow: 0 6px 16px rgba(16, 185, 129, 0.3);
 }
+
+/* Employee card and link styles */
+.employee-card-link {
+  text-decoration: none;
+  color: inherit;
+  display: block;
+  transition: all 0.2s ease;
+}
+
+.employee-card-link:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.employee-card-link:hover .equipment-name {
+  color: #2563eb;
+}
+
+.employee-name-link {
+  color: #2563eb;
+  text-decoration: none;
+  font-weight: 500;
+  transition: color 0.2s ease;
+}
+
+.employee-name-link:hover {
+  color: #1d4ed8;
+  text-decoration: underline;
+}
+
+/* Client and Property specific styles */
+.contact-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.contact-info > div:first-child {
+  font-weight: 500;
+  color: #1f2937;
+}
+
+.contact-info > div:not(:first-child) {
+  font-size: 0.875rem;
+  color: #6b7280;
+}
+
+.address-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.address-info > div:first-child {
+  font-weight: 500;
+  color: #1f2937;
+}
+
+.address-info > div:not(:first-child) {
+  font-size: 0.875rem;
+  color: #6b7280;
+}
+
+.tank-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.tank-info > div:first-child {
+  font-weight: 500;
+  color: #1f2937;
+}
+
+.access-notes {
+  max-width: 200px;
+  font-size: 0.875rem;
+  color: #6b7280;
+  line-height: 1.4;
+}
+
+.status-badge.domestic {
+  background-color: #dbeafe;
+  color: #1e40af;
+}
+
+.status-badge.commercial {
+  background-color: #fef3c7;
+  color: #92400e;
+}
+
+/* Clickable table rows */
+.clickable-row {
+  transition: all 0.2s ease;
+}
+
+.clickable-row:hover {
+  background-color: #f8fafc;
+  transform: translateY(-1px);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.view-indicator {
+  font-size: 0.875rem;
+  color: #3b82f6;
+  font-weight: 500;
+}
