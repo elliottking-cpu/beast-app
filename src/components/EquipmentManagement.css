@@ -1866,3 +1866,114 @@
   transform: translateY(-1px);
   box-shadow: 0 6px 16px rgba(16, 185, 129, 0.3);
 }
+
+/* Lead Management Styles */
+.company-info {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.company-name {
+  font-weight: 600;
+  color: #1e293b;
+}
+
+.company-address {
+  font-size: 0.875rem;
+  color: #64748b;
+}
+
+.contact-info {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.contact-name {
+  font-weight: 600;
+  color: #1e293b;
+}
+
+.contact-details {
+  display: flex;
+  flex-direction: column;
+  gap: 0.125rem;
+  font-size: 0.875rem;
+  color: #64748b;
+}
+
+.value-cell {
+  font-weight: 600;
+  color: #059669;
+}
+
+.date-cell {
+  font-size: 0.875rem;
+  color: #64748b;
+}
+
+/* Status badges */
+.status-badge {
+  padding: 0.25rem 0.75rem;
+  border-radius: 12px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.status-new {
+  background: #dbeafe;
+  color: #1d4ed8;
+}
+
+.status-contacted {
+  background: #fef3c7;
+  color: #d97706;
+}
+
+.status-qualified {
+  background: #d1fae5;
+  color: #059669;
+}
+
+.status-proposal {
+  background: #e0e7ff;
+  color: #6366f1;
+}
+
+.status-won {
+  background: #dcfce7;
+  color: #16a34a;
+}
+
+.status-lost {
+  background: #fee2e2;
+  color: #dc2626;
+}
+
+/* Priority badges */
+.priority-badge {
+  padding: 0.25rem 0.75rem;
+  border-radius: 12px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.priority-high {
+  background: #fee2e2;
+  color: #dc2626;
+}
+
+.priority-medium {
+  background: #fef3c7;
+  color: #d97706;
+}
+
+.priority-low {
+  background: #f0f9ff;
+  color: #0284c7;
+}
