@@ -6,6 +6,7 @@ import AccountCreationForm from './components/AccountCreationForm.tsx'
 import GroupCompanySetup from './components/GroupCompanySetup.tsx'
 import Dashboard from './components/Dashboard.tsx'
 import DashboardLayout from './components/DashboardLayout.tsx'
+import BlankDashboard from './components/BlankDashboard.tsx'
 import EquipmentManagement from './components/EquipmentManagement.tsx'
 import SkillsManagement from './components/SkillsManagement.tsx'
 import ServiceManagement from './components/ServiceManagement.tsx'
@@ -17,12 +18,6 @@ import EmployeeManagement from './components/EmployeeManagement.tsx'
 import RegionalEmployees from './components/RegionalEmployees.tsx'
 import AddBusinessUnit from './components/AddBusinessUnit.tsx'
 import EmployeeDetail from './components/EmployeeDetail.tsx'
-import ClientManagement from './components/ClientManagement.tsx'
-import ClientDetail from './components/ClientDetail.tsx'
-import PropertyManagement from './components/PropertyManagement.tsx'
-import PropertyDetail from './components/PropertyDetail.tsx'
-import RegionalDashboard from './components/RegionalDashboard.tsx'
-import ScheduleManagement from './components/ScheduleManagement.tsx'
 import LeadManagement from './components/LeadManagement.tsx'
 import './App.css'
 
@@ -38,7 +33,7 @@ function App() {
           
           {/* Dashboard Layout with nested routes */}
           <Route path="/:companyName/*" element={<DashboardLayout />}>
-            <Route path="dashboard" element={<RegionalDashboard />} />
+            <Route path="dashboard" element={<Dashboard />} />
             <Route path="equipment" element={<EquipmentManagement />} />
             <Route path="equipment/add" element={<EquipmentCreationWizard />} />
             <Route path="equipment/categories" element={<EquipmentCategoriesManagement />} />
@@ -59,23 +54,37 @@ function App() {
             <Route path="group-hr" element={<Dashboard />} />
             <Route path="group-marketing" element={<Dashboard />} />
             <Route path="group-app-settings" element={<Dashboard />} />
-            <Route path="sales" element={<RegionalDashboard />} />
             <Route path="sales/leads" element={<LeadManagement />} />
-            <Route path="transport" element={<RegionalDashboard />} />
-            <Route path="surveying" element={<RegionalDashboard />} />
-            <Route path="construction" element={<RegionalDashboard />} />
-            <Route path="hr" element={<RegionalDashboard />} />
             <Route path="hr/employees" element={<RegionalEmployees />} />
             <Route path="hr/employees/:employeeId" element={<EmployeeDetail />} />
-            <Route path="accounts" element={<RegionalDashboard />} />
-            <Route path="clients" element={<ClientManagement />} />
-            <Route path="clients/add" element={<ClientManagement />} />
-            <Route path="clients/:clientId" element={<ClientDetail />} />
-            <Route path="properties" element={<PropertyManagement />} />
-            <Route path="properties/add" element={<PropertyManagement />} />
-            <Route path="properties/:propertyId" element={<PropertyDetail />} />
-            <Route path="schedule" element={<ScheduleManagement />} />
-            <Route index element={<RegionalDashboard />} />
+            
+            {/* Department Dashboard Routes */}
+            <Route path="accounts/dashboard" element={<BlankDashboard />} />
+            <Route path="business-management/dashboard" element={<BlankDashboard />} />
+            <Route path="clients/dashboard" element={<BlankDashboard />} />
+            <Route path="construction/dashboard" element={<BlankDashboard />} />
+            <Route path="customer-service/dashboard" element={<BlankDashboard />} />
+            <Route path="hr/dashboard" element={<BlankDashboard />} />
+            <Route path="marketing/dashboard" element={<BlankDashboard />} />
+            <Route path="properties/dashboard" element={<BlankDashboard />} />
+            <Route path="sales/dashboard" element={<BlankDashboard />} />
+            <Route path="scheduling/dashboard" element={<BlankDashboard />} />
+            <Route path="surveying/dashboard" element={<BlankDashboard />} />
+            <Route path="transport/dashboard" element={<BlankDashboard />} />
+            
+            {/* Group Department Dashboard Routes */}
+            <Route path="group-sales/dashboard" element={<BlankDashboard />} />
+            <Route path="group-accounts/dashboard" element={<BlankDashboard />} />
+            <Route path="group-clients/dashboard" element={<BlankDashboard />} />
+            <Route path="group-hr/dashboard" element={<BlankDashboard />} />
+            <Route path="group-properties/dashboard" element={<BlankDashboard />} />
+            <Route path="group-transport/dashboard" element={<BlankDashboard />} />
+            <Route path="group-surveying/dashboard" element={<BlankDashboard />} />
+            <Route path="group-construction/dashboard" element={<BlankDashboard />} />
+            <Route path="group-marketing/dashboard" element={<BlankDashboard />} />
+            <Route path="group-app-settings/dashboard" element={<BlankDashboard />} />
+            
+            <Route index element={<Dashboard />} />
           </Route>
         </Routes>
     </Router>

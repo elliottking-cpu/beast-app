@@ -1,707 +1,653 @@
 import React, { useState, useEffect } from 'react'
-import { useParams } from 'react-router-dom'
+import { useParams, useNavigate } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
-import './EquipmentManagement.css'
+import './LeadManagement.css'
 
 interface Lead {
   id: string
-  client_name: string
+  company_name: string
   contact_name: string
-  email?: string
-  phone?: string
-  property_address: string
-  service_type: string
-  lead_stage: 'NEW' | 'CONTACTED' | 'QUALIFIED' | 'PROPOSAL' | 'WON' | 'LOST'
+  contact_email: string
+  contact_phone: string
   lead_source: string
-  estimated_value?: number
+  lead_status: string
+  priority: string
+  estimated_value: number
+  service_type: string
+  address: string
+  postcode: string
+  notes: string
+  assigned_to: string
   created_at: string
-  last_activity: string
-  assigned_to?: string
-  notes?: string
+  follow_up_date: string
+  last_contact_date: string
+  status_color?: string
+  priority_color?: string
 }
 
-interface BusinessUnit {
+interface Employee {
   id: string
-  name: string
-  business_unit_type_id: string
+  first_name: string
+  last_name: string
 }
 
 interface LeadMetrics {
   newLeads: number
-  newLeadsChange: number
   conversionRate: number
-  conversionRateChange: number
   totalLeads: number
 }
 
 const LeadManagement: React.FC = () => {
   const { companyName } = useParams<{ companyName: string }>()
+  const navigate = useNavigate()
   const [leads, setLeads] = useState<Lead[]>([])
-  const [businessUnit, setBusinessUnit] = useState<BusinessUnit | null>(null)
-  const [metrics, setMetrics] = useState<LeadMetrics | null>(null)
+  const [employees, setEmployees] = useState<Employee[]>([])
   const [loading, setLoading] = useState(true)
+  const [showAddModal, setShowAddModal] = useState(false)
   const [searchTerm, setSearchTerm] = useState('')
-  const [filterStage, setFilterStage] = useState<string>('All')
-  const [selectedStages, setSelectedStages] = useState<string[]>([])
-  const [showPlaceholder, setShowPlaceholder] = useState<string | null>(null)
+  const [statusFilter, setStatusFilter] = useState('All')
+  const [metrics, setMetrics] = useState<LeadMetrics>({
+    newLeads: 0,
+    conversionRate: 0,
+    totalLeads: 0
+  })
 
-  // Lead stage counts for overview
-  const [stageCounts, setStageCounts] = useState({
-    new: 0,
-    contacted: 0,
-    qualified: 0,
-    proposal: 0,
-    won: 0,
-    lost: 0
+  // Form state
+  const [formData, setFormData] = useState({
+    company_name: '',
+    contact_name: '',
+    contact_email: '',
+    contact_phone: '',
+    lead_source: 'Website',
+    lead_status: 'New',
+    priority: 'Medium',
+    estimated_value: '',
+    service_type: 'Septic Tank Installation',
+    address: '',
+    postcode: '',
+    notes: '',
+    assigned_to: '',
+    follow_up_date: ''
   })
 
   useEffect(() => {
-    loadData()
-  }, [companyName])
+    loadLeads()
+    loadEmployees()
+  }, [])
 
-  const loadData = async () => {
+  const loadLeads = async () => {
     try {
-      setLoading(true)
+      // Get current user's business unit
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) return
 
-      // Convert company name from URL format to proper case
-      const businessUnitName = companyName
-        ?.split('-')
-        .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
-        .join(' ')
-
-      // Load business unit
-      const { data: businessUnitData, error: businessUnitError } = await supabase
-        .from('business_units')
-        .select('id, name, business_unit_type_id')
-        .eq('name', businessUnitName)
+      const { data: userData } = await supabase
+        .from('users')
+        .select('business_unit_id')
+        .eq('email', user.email)
         .single()
 
-      if (businessUnitError) {
-        console.error('Error loading business unit:', businessUnitError)
+      if (!userData?.business_unit_id) return
+
+      // Determine which business unit to query based on URL
+      let targetBusinessUnitId = userData.business_unit_id
+      
+      // If URL contains a specific company name, try to find that business unit
+      if (companyName) {
+        const companySlug = companyName.toLowerCase().replace(/-/g, ' ')
+        const { data: targetBU } = await supabase
+          .from('business_units')
+          .select('id, name')
+          .ilike('name', `%${companySlug}%`)
+          .single()
+        
+        if (targetBU) {
+          targetBusinessUnitId = targetBU.id
+          console.log('Found target business unit:', targetBU.name, targetBU.id)
+        } else {
+          console.log('No business unit found for company name:', companyName)
+        }
+      }
+      
+      console.log('Loading leads for business unit ID:', targetBusinessUnitId)
+
+      // Fetch leads with related data using separate queries to avoid Supabase join issues
+      const { data: leadsData, error } = await supabase
+        .from('leads')
+        .select(`
+          id,
+          company_name,
+          contact_name,
+          contact_email,
+          contact_phone,
+          estimated_value,
+          address,
+          postcode,
+          notes,
+          created_at,
+          follow_up_date,
+          last_contact_date,
+          lead_source_id,
+          lead_status_id,
+          priority_id,
+          service_type_id,
+          assigned_to
+        `)
+        .eq('business_unit_id', targetBusinessUnitId)
+        .order('created_at', { ascending: false })
+
+      if (error) {
+        console.error('Error loading leads:', error)
         return
       }
 
-      setBusinessUnit(businessUnitData)
-
-      // For now, show sample data since lead management backend isn't implemented
-      await loadSampleLeads()
-
-      // Calculate sample metrics
-      const leadMetrics: LeadMetrics = {
-        newLeads: 23,
-        newLeadsChange: 283,
-        conversionRate: 28,
-        conversionRateChange: -66,
-        totalLeads: 1755
+      if (!leadsData || leadsData.length === 0) {
+        setLeads([])
+        setLoading(false)
+        return
       }
-      setMetrics(leadMetrics)
+
+      // Fetch lookup data separately
+      const [sourcesData, statusesData, prioritiesData, serviceTypesData, usersData] = await Promise.all([
+        supabase.from('lead_sources').select('id, name'),
+        supabase.from('lead_statuses').select('id, name, color_code'),
+        supabase.from('lead_priorities').select('id, name, color_code'),
+        supabase.from('service_types').select('id, name'),
+        supabase.from('users').select('id, first_name, last_name')
+      ])
+
+      // Create lookup maps
+      const sourcesMap = new Map(sourcesData.data?.map(s => [s.id, s.name]) || [])
+      const statusesMap = new Map(statusesData.data?.map(s => [s.id, { name: s.name, color: s.color_code }]) || [])
+      const prioritiesMap = new Map(prioritiesData.data?.map(p => [p.id, { name: p.name, color: p.color_code }]) || [])
+      const serviceTypesMap = new Map(serviceTypesData.data?.map(st => [st.id, st.name]) || [])
+      const usersMap = new Map(usersData.data?.map(u => [u.id, `${u.first_name} ${u.last_name}`]) || [])
+
+      // Transform the data
+      const transformedLeads: Lead[] = leadsData.map(lead => ({
+        id: lead.id,
+        company_name: lead.company_name,
+        contact_name: lead.contact_name,
+        contact_email: lead.contact_email,
+        contact_phone: lead.contact_phone,
+        lead_source: sourcesMap.get(lead.lead_source_id) || 'Unknown',
+        lead_status: statusesMap.get(lead.lead_status_id)?.name || 'Unknown',
+        status_color: statusesMap.get(lead.lead_status_id)?.color,
+        priority: prioritiesMap.get(lead.priority_id)?.name || 'Unknown',
+        priority_color: prioritiesMap.get(lead.priority_id)?.color,
+        estimated_value: lead.estimated_value || 0,
+        service_type: serviceTypesMap.get(lead.service_type_id) || 'Unknown',
+        address: lead.address || '',
+        postcode: lead.postcode || '',
+        notes: lead.notes || '',
+        assigned_to: usersMap.get(lead.assigned_to) || 'Unassigned',
+        created_at: lead.created_at,
+        follow_up_date: lead.follow_up_date,
+        last_contact_date: lead.last_contact_date
+      }))
+
+      setLeads(transformedLeads)
+      
+      // Calculate metrics
+      const newLeads = transformedLeads.filter(l => l.lead_status === 'New').length
+      const wonLeads = transformedLeads.filter(l => l.lead_status === 'Won').length
+      const conversionRate = transformedLeads.length > 0 ? Math.round((wonLeads / transformedLeads.length) * 100) : 0
+      
+      setMetrics({
+        newLeads,
+        conversionRate,
+        totalLeads: transformedLeads.length
+      })
 
     } catch (error) {
-      console.error('Error loading data:', error)
+      console.error('Error loading leads:', error)
     } finally {
       setLoading(false)
     }
   }
 
-  const loadSampleLeads = async () => {
-    // Sample lead data to demonstrate the interface
-    // This will be replaced with real backend integration
-    const sampleLeads: Lead[] = [
-      {
-        id: '1',
-        client_name: 'Andrew Gardiner',
-        contact_name: 'Andrew Gardiner',
-        email: 'aw.gardiner@hotmail.com',
-        phone: '07932374868',
-        property_address: '1a Love Lane, York, England YO24 1FE',
-        service_type: 'Septic Tank Emptying',
-        lead_stage: 'NEW',
-        lead_source: 'Website Inquiry',
-        estimated_value: 150,
-        created_at: '2024-08-04T10:00:00Z',
-        last_activity: '2024-08-04T10:00:00Z',
-        assigned_to: 'Sales Team',
-        notes: 'Quote for pump station maintenance or jetvac?'
-      },
-      {
-        id: '2',
-        client_name: 'Moira Wilkinson-Mudd',
-        contact_name: 'Moira Wilkinson-Mudd',
-        email: 'holbornfarm@hotmail.com',
-        phone: '07725003350',
-        property_address: 'Holborn Farm, York, YO42 4EF',
-        service_type: 'Site Visit',
-        lead_stage: 'CONTACTED',
-        lead_source: 'Phone Inquiry',
-        estimated_value: 75,
-        created_at: '2024-08-06T14:30:00Z',
-        last_activity: '2024-08-06T15:45:00Z',
-        assigned_to: 'John Smith'
-      },
-      {
-        id: '3',
-        client_name: 'Isobel Burley',
-        contact_name: 'Isobel Burley',
-        email: 'isobel.burley@icloud.com',
-        phone: '07776946185',
-        property_address: 'Apple House 7 Middlewood Hall, Doncaster Road, Barnsley, England',
-        service_type: 'New Tank Installation',
-        lead_stage: 'QUALIFIED',
-        lead_source: 'Referral',
-        estimated_value: 2500,
-        created_at: '2024-04-04T09:15:00Z',
-        last_activity: '2024-04-05T11:20:00Z',
-        assigned_to: 'Sarah Johnson'
-      },
-      {
-        id: '4',
-        client_name: 'William Strike Ltd',
-        contact_name: 'Hunter',
-        email: 'expenses@klondyke.co.uk',
-        phone: '',
-        property_address: 'Strikes Garden Centre, Leeds, England LS25 2AQ',
-        service_type: 'Commercial Maintenance',
-        lead_stage: 'PROPOSAL',
-        lead_source: 'Cold Call',
-        estimated_value: 1200,
-        created_at: '2024-08-04T16:00:00Z',
-        last_activity: '2024-08-05T10:30:00Z',
-        assigned_to: 'Mike Wilson'
-      },
-      {
-        id: '5',
-        client_name: 'Suvannah Montpellier',
-        contact_name: 'Suvannah Montpellier',
-        email: 's.montpellier@gmail.com',
-        phone: '07777746365',
-        property_address: '2 Stockhill Cottages, York, England YO23 3PF',
-        service_type: 'Emergency Service',
-        lead_stage: 'WON',
-        lead_source: 'Google Ads',
-        estimated_value: 200,
-        created_at: '2024-08-12T08:00:00Z',
-        last_activity: '2024-08-12T14:00:00Z',
-        assigned_to: 'Tom Brown'
+  const loadEmployees = async () => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) return
+
+      const { data: userData } = await supabase
+        .from('users')
+        .select('business_unit_id')
+        .eq('email', user.email)
+        .single()
+
+      if (!userData?.business_unit_id) return
+
+      // Determine which business unit to query based on URL
+      let targetBusinessUnitId = userData.business_unit_id
+      
+      // If URL contains a specific company name, try to find that business unit
+      if (companyName) {
+        const companySlug = companyName.toLowerCase().replace(/-/g, ' ')
+        const { data: targetBU } = await supabase
+          .from('business_units')
+          .select('id, name')
+          .ilike('name', `%${companySlug}%`)
+          .single()
+        
+        if (targetBU) {
+          targetBusinessUnitId = targetBU.id
+        }
       }
-    ]
 
-    setLeads(sampleLeads)
+      const { data: employeesData, error } = await supabase
+        .from('users')
+        .select('id, first_name, last_name')
+        .eq('business_unit_id', targetBusinessUnitId)
+        .eq('is_active', true)
 
-    // Calculate stage counts
-    const counts = {
-      new: sampleLeads.filter(l => l.lead_stage === 'NEW').length,
-      contacted: sampleLeads.filter(l => l.lead_stage === 'CONTACTED').length,
-      qualified: sampleLeads.filter(l => l.lead_stage === 'QUALIFIED').length,
-      proposal: sampleLeads.filter(l => l.lead_stage === 'PROPOSAL').length,
-      won: sampleLeads.filter(l => l.lead_stage === 'WON').length,
-      lost: sampleLeads.filter(l => l.lead_stage === 'LOST').length
-    }
-    setStageCounts(counts)
-  }
+      if (error) {
+        console.error('Error loading employees:', error)
+        return
+      }
 
-  const showPlaceholderModal = (feature: string) => {
-    setShowPlaceholder(feature)
-  }
-
-  const closePlaceholderModal = () => {
-    setShowPlaceholder(null)
-  }
-
-  const getStageColor = (stage: string) => {
-    switch (stage) {
-      case 'NEW': return '#3b82f6'
-      case 'CONTACTED': return '#8b5cf6'
-      case 'QUALIFIED': return '#f59e0b'
-      case 'PROPOSAL': return '#10b981'
-      case 'WON': return '#059669'
-      case 'LOST': return '#dc2626'
-      default: return '#64748b'
+      setEmployees(employeesData || [])
+    } catch (error) {
+      console.error('Error loading employees:', error)
     }
   }
 
-  const getStageLabel = (stage: string) => {
-    switch (stage) {
-      case 'NEW': return 'New'
-      case 'CONTACTED': return 'Contacted'
-      case 'QUALIFIED': return 'Qualified'
-      case 'PROPOSAL': return 'Proposal Sent'
-      case 'WON': return 'Won'
-      case 'LOST': return 'Lost'
-      default: return stage
+  const handleAddLead = async (e: React.FormEvent) => {
+    e.preventDefault()
+    
+    try {
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) return
+
+      const { data: userData } = await supabase
+        .from('users')
+        .select('business_unit_id')
+        .eq('email', user.email)
+        .single()
+
+      if (!userData?.business_unit_id) return
+
+      // Determine which business unit to use based on URL
+      let targetBusinessUnitId = userData.business_unit_id
+      
+      // If URL contains a specific company name, try to find that business unit
+      if (companyName) {
+        const companySlug = companyName.toLowerCase().replace(/-/g, ' ')
+        const { data: targetBU } = await supabase
+          .from('business_units')
+          .select('id, name')
+          .ilike('name', `%${companySlug}%`)
+          .single()
+        
+        if (targetBU) {
+          targetBusinessUnitId = targetBU.id
+        }
+      }
+
+      // Get lookup IDs
+      const [sourceResult, statusResult, priorityResult, serviceResult] = await Promise.all([
+        supabase.from('lead_sources').select('id').eq('name', formData.lead_source).single(),
+        supabase.from('lead_statuses').select('id').eq('name', formData.lead_status).single(),
+        supabase.from('lead_priorities').select('id').eq('name', formData.priority).single(),
+        supabase.from('service_types').select('id').eq('name', formData.service_type).single()
+      ])
+
+      const { error } = await supabase
+        .from('leads')
+        .insert({
+          business_unit_id: targetBusinessUnitId,
+          company_name: formData.company_name,
+          contact_name: formData.contact_name,
+          contact_email: formData.contact_email,
+          contact_phone: formData.contact_phone,
+          lead_source_id: sourceResult.data?.id,
+          lead_status_id: statusResult.data?.id,
+          priority_id: priorityResult.data?.id,
+          estimated_value: parseFloat(formData.estimated_value) || 0,
+          service_type_id: serviceResult.data?.id,
+          address: formData.address,
+          postcode: formData.postcode,
+          notes: formData.notes,
+          assigned_to: formData.assigned_to || null,
+          follow_up_date: formData.follow_up_date || null,
+          last_contact_date: new Date().toISOString()
+        })
+
+      if (error) {
+        console.error('Error adding lead:', error)
+        return
+      }
+
+      loadLeads()
+      setShowAddModal(false)
+      resetForm()
+    } catch (error) {
+      console.error('Error adding lead:', error)
     }
+  }
+
+  const resetForm = () => {
+    setFormData({
+      company_name: '',
+      contact_name: '',
+      contact_email: '',
+      contact_phone: '',
+      lead_source: 'Website',
+      lead_status: 'New',
+      priority: 'Medium',
+      estimated_value: '',
+      service_type: 'Septic Tank Installation',
+      address: '',
+      postcode: '',
+      notes: '',
+      assigned_to: '',
+      follow_up_date: ''
+    })
   }
 
   const filteredLeads = leads.filter(lead => {
-    const matchesSearch = 
-      lead.client_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      lead.contact_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      lead.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      lead.property_address?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      lead.service_type?.toLowerCase().includes(searchTerm.toLowerCase())
-
-    const matchesStage = filterStage === 'All' || lead.lead_stage === filterStage
-
-    return matchesSearch && matchesStage
+    const matchesSearch = lead.company_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         lead.contact_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         lead.contact_email.toLowerCase().includes(searchTerm.toLowerCase())
+    const matchesStatus = statusFilter === 'All' || lead.lead_status === statusFilter
+    
+    return matchesSearch && matchesStatus
   })
 
   if (loading) {
     return (
-      <div className="equipment-management">
-        <div className="loading-state">Loading leads...</div>
-      </div>
-    )
-  }
-
-  if (!businessUnit) {
-    return (
-      <div className="equipment-management">
-        <div className="error-state">Unable to load lead data</div>
+      <div className="lead-management">
+        <div className="loading-container">
+          <div className="loading-spinner"></div>
+          <p>Loading leads...</p>
+        </div>
       </div>
     )
   }
 
   return (
-    <div style={{ padding: '1.5rem', backgroundColor: '#f8fafc', minHeight: '100vh' }}>
+    <div className="lead-management">
       {/* Header */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem' }}>
-        <div>
-          <div style={{ fontSize: '0.875rem', color: '#64748b', marginBottom: '0.25rem' }}>
-            {businessUnit?.name}
-          </div>
-          <h1 style={{ fontSize: '2rem', fontWeight: '700', color: '#1f2937', margin: 0 }}>
-            Leads
-          </h1>
-        </div>
-        
-        <div style={{ display: 'flex', gap: '0.75rem' }}>
+      <div className="lead-header">
+        <h1>Leads</h1>
+        <div className="header-actions">
           <button 
-            onClick={() => showPlaceholderModal('New Lead Creation')}
-            style={{ 
-              backgroundColor: '#10b981', 
-              color: 'white', 
-              border: 'none', 
-              borderRadius: '6px', 
-              padding: '0.75rem 1rem', 
-              fontSize: '0.875rem',
-              cursor: 'pointer',
-              fontWeight: '500'
-            }}
+            className="btn-new-lead"
+            onClick={() => setShowAddModal(true)}
           >
             New Lead
           </button>
-          <button 
-            onClick={() => showPlaceholderModal('More Actions Menu')}
-            style={{ 
-              backgroundColor: 'white', 
-              color: '#64748b', 
-              border: '1px solid #e5e7eb', 
-              borderRadius: '6px', 
-              padding: '0.75rem 1rem', 
-              fontSize: '0.875rem',
-              cursor: 'pointer',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '0.5rem'
-            }}
-          >
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <circle cx="12" cy="12" r="1" />
-              <circle cx="12" cy="5" r="1" />
-              <circle cx="12" cy="19" r="1" />
-            </svg>
-            More Actions
+          <button className="btn-more-actions">
+            ⋯ More Actions
           </button>
         </div>
       </div>
 
-      {/* Lead Stage Overview */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '1rem', marginBottom: '2rem' }}>
-        {/* Overview Card */}
-        <div style={{ backgroundColor: 'white', borderRadius: '8px', padding: '1.5rem', boxShadow: '0 1px 3px rgba(0,0,0,0.1)' }}>
-          <div style={{ fontSize: '1rem', fontWeight: '600', color: '#1f2937', marginBottom: '1rem' }}>Overview</div>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.875rem' }}>
-              <div style={{ width: '8px', height: '8px', borderRadius: '50%', backgroundColor: '#3b82f6' }}></div>
-              <span style={{ color: '#64748b' }}>New ({stageCounts.new})</span>
-            </div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.875rem' }}>
-              <div style={{ width: '8px', height: '8px', borderRadius: '50%', backgroundColor: '#8b5cf6' }}></div>
-              <span style={{ color: '#64748b' }}>Contacted ({stageCounts.contacted})</span>
-            </div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.875rem' }}>
-              <div style={{ width: '8px', height: '8px', borderRadius: '50%', backgroundColor: '#f59e0b' }}></div>
-              <span style={{ color: '#64748b' }}>Qualified ({stageCounts.qualified})</span>
-            </div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.875rem' }}>
-              <div style={{ width: '8px', height: '8px', borderRadius: '50%', backgroundColor: '#10b981' }}></div>
-              <span style={{ color: '#64748b' }}>Proposal ({stageCounts.proposal})</span>
-            </div>
+      {/* Overview Cards */}
+      <div className="overview-section">
+        <div className="overview-card">
+          <div className="overview-header">
+            <h3>New leads</h3>
+            <span className="time-period">Past 30 days</span>
+          </div>
+          <div className="overview-content">
+            <div className="metric-number">{metrics.newLeads}</div>
+            <div className="metric-change positive">↑ 283%</div>
           </div>
         </div>
 
-        {/* Metrics Cards */}
-        {metrics && (
-          <>
-            {/* New leads */}
-            <div 
-              onClick={() => showPlaceholderModal('Lead Analytics Dashboard')}
-              style={{ 
-                backgroundColor: 'white', 
-                borderRadius: '8px', 
-                padding: '1.5rem', 
-                boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
-                cursor: 'pointer',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '1rem'
-              }}
-            >
-              <div style={{ flex: 1 }}>
-                <div style={{ fontSize: '0.875rem', color: '#64748b', marginBottom: '0.5rem' }}>New leads</div>
-                <div style={{ fontSize: '0.75rem', color: '#64748b', marginBottom: '1rem' }}>Past 30 days</div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                  <div style={{ fontSize: '2rem', fontWeight: '700', color: '#1f2937' }}>{metrics.newLeads}</div>
-                  <div style={{ 
-                    fontSize: '0.875rem', 
-                    color: '#10b981', 
-                    display: 'flex', 
-                    alignItems: 'center', 
-                    gap: '0.25rem' 
-                  }}>
-                    ↗ {metrics.newLeadsChange}%
-                  </div>
-                </div>
-              </div>
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#64748b" strokeWidth="2">
-                <path d="M9 18l6-6-6-6" />
-              </svg>
-            </div>
+        <div className="overview-card">
+          <div className="overview-header">
+            <h3>Conversion rate</h3>
+            <span className="time-period">Past 30 days</span>
+          </div>
+          <div className="overview-content">
+            <div className="metric-number">{metrics.conversionRate}%</div>
+            <div className="metric-change negative">↓ 66%</div>
+          </div>
+        </div>
 
-            {/* Conversion rate */}
-            <div 
-              onClick={() => showPlaceholderModal('Conversion Rate Analytics')}
-              style={{ 
-                backgroundColor: 'white', 
-                borderRadius: '8px', 
-                padding: '1.5rem', 
-                boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
-                cursor: 'pointer',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '1rem'
-              }}
-            >
-              <div style={{ flex: 1 }}>
-                <div style={{ fontSize: '0.875rem', color: '#64748b', marginBottom: '0.5rem' }}>Conversion rate</div>
-                <div style={{ fontSize: '0.75rem', color: '#64748b', marginBottom: '1rem' }}>Past 30 days</div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                  <div style={{ fontSize: '2rem', fontWeight: '700', color: '#1f2937' }}>{metrics.conversionRate}%</div>
-                  <div style={{ 
-                    fontSize: '0.875rem', 
-                    color: '#dc2626', 
-                    display: 'flex', 
-                    alignItems: 'center', 
-                    gap: '0.25rem' 
-                  }}>
-                    ↓ {metrics.conversionRateChange}%
-                  </div>
-                </div>
-              </div>
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#64748b" strokeWidth="2">
-                <path d="M9 18l6-6-6-6" />
-              </svg>
-            </div>
-
-            {/* Promotional Card */}
-            <div 
-              onClick={() => showPlaceholderModal('Lead Management Analytics')}
-              style={{ 
-                backgroundColor: '#f8fafc', 
-                borderRadius: '8px', 
-                padding: '1.5rem', 
-                boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
-                cursor: 'pointer',
-                border: '1px solid #e2e8f0'
-              }}
-            >
-              <div style={{ fontSize: '0.875rem', color: '#64748b', marginBottom: '0.5rem' }}>You've come a long way!</div>
-              <div style={{ fontSize: '0.75rem', color: '#64748b', marginBottom: '1rem', lineHeight: '1.4' }}>
-                Want to dig into your business growth and changes over the last year?
-              </div>
-              <div style={{ fontSize: '0.875rem', color: '#3b82f6', fontWeight: '500' }}>
-                Learn more with ⚡ Copilot
-              </div>
-            </div>
-          </>
-        )}
+        <div className="overview-card copilot-card">
+          <div className="copilot-content">
+            <h3>You've come a long way!</h3>
+            <p>Want to dig into your business growth and changes over the last year?</p>
+            <button className="learn-more-btn">Learn more with ⚡ Copilot</button>
+          </div>
+        </div>
       </div>
 
-      {/* Filters Section */}
-      <div style={{ backgroundColor: 'white', borderRadius: '8px', padding: '1.5rem', marginBottom: '1.5rem', boxShadow: '0 1px 3px rgba(0,0,0,0.1)' }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-            <h3 style={{ fontSize: '1rem', fontWeight: '600', color: '#1f2937', margin: 0 }}>
-              All leads ({filteredLeads.length.toLocaleString()} results)
-            </h3>
-          </div>
-          
-          <div style={{ position: 'relative' }}>
-            <input
-              type="text"
-              placeholder="Search leads..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              style={{
-                border: '1px solid #e5e7eb',
-                borderRadius: '6px',
-                padding: '0.5rem 2.5rem 0.5rem 1rem',
-                fontSize: '0.875rem',
-                width: '300px'
-              }}
-            />
-            <svg 
-              style={{ position: 'absolute', right: '0.75rem', top: '50%', transform: 'translateY(-50%)', color: '#64748b' }}
-              width="16" 
-              height="16" 
-              viewBox="0 0 24 24" 
-              fill="none" 
-              stroke="currentColor" 
-              strokeWidth="2"
-            >
-              <circle cx="11" cy="11" r="8" />
-              <path d="m21 21-4.35-4.35" />
-            </svg>
-          </div>
+      {/* Filters */}
+      <div className="filters-section">
+        <div className="filter-group">
+          <label>Status</label>
+          <select 
+            value={statusFilter} 
+            onChange={(e) => setStatusFilter(e.target.value)}
+            className="filter-select"
+          >
+            <option value="All">All</option>
+            <option value="New">New</option>
+            <option value="Contacted">Contacted</option>
+            <option value="Qualified">Qualified</option>
+            <option value="Proposal">Proposal</option>
+            <option value="Won">Won</option>
+            <option value="Lost">Lost</option>
+          </select>
         </div>
 
-        <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'center', flexWrap: 'wrap' }}>
-          <div style={{ display: 'flex', gap: '0.5rem' }}>
-            <span style={{ fontSize: '0.875rem', color: '#64748b', fontWeight: '500' }}>Stage</span>
-            <select
-              value={filterStage}
-              onChange={(e) => setFilterStage(e.target.value)}
-              style={{
-                border: '1px solid #e5e7eb',
-                borderRadius: '6px',
-                padding: '0.25rem 0.5rem',
-                fontSize: '0.875rem',
-                backgroundColor: 'white'
-              }}
-            >
-              <option value="All">All</option>
-              <option value="NEW">New</option>
-              <option value="CONTACTED">Contacted</option>
-              <option value="QUALIFIED">Qualified</option>
-              <option value="PROPOSAL">Proposal</option>
-              <option value="WON">Won</option>
-              <option value="LOST">Lost</option>
-            </select>
-          </div>
-
-          <div style={{ 
-            backgroundColor: '#e2e8f0', 
-            borderRadius: '20px', 
-            padding: '0.25rem 0.75rem', 
-            fontSize: '0.875rem',
-            color: '#64748b'
-          }}>
-            All
-          </div>
+        <div className="search-container">
+          <input
+            type="text"
+            placeholder="Search leads..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="search-input"
+          />
         </div>
       </div>
 
       {/* Leads Table */}
-      <div style={{ backgroundColor: 'white', borderRadius: '8px', boxShadow: '0 1px 3px rgba(0,0,0,0.1)', overflow: 'hidden' }}>
-        <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-          <thead>
-            <tr style={{ backgroundColor: '#f8fafc', borderBottom: '1px solid #e5e7eb' }}>
-              <th style={{ padding: '0.75rem 1rem', textAlign: 'left', fontSize: '0.875rem', fontWeight: '500', color: '#64748b' }}>
-                <input type="checkbox" style={{ marginRight: '0.5rem' }} />
-                Client
-              </th>
-              <th style={{ padding: '0.75rem 1rem', textAlign: 'left', fontSize: '0.875rem', fontWeight: '500', color: '#64748b' }}>
-                Service Type
-              </th>
-              <th style={{ padding: '0.75rem 1rem', textAlign: 'left', fontSize: '0.875rem', fontWeight: '500', color: '#64748b' }}>
-                Property
-              </th>
-              <th style={{ padding: '0.75rem 1rem', textAlign: 'left', fontSize: '0.875rem', fontWeight: '500', color: '#64748b' }}>
-                Contact
-              </th>
-              <th style={{ padding: '0.75rem 1rem', textAlign: 'left', fontSize: '0.875rem', fontWeight: '500', color: '#64748b' }}>
-                Created
-              </th>
-              <th style={{ padding: '0.75rem 1rem', textAlign: 'left', fontSize: '0.875rem', fontWeight: '500', color: '#64748b' }}>
-                Stage
-              </th>
-            </tr>
-          </thead>
-          <tbody>
-            {filteredLeads.length === 0 ? (
+      <div className="leads-table-section">
+        <div className="table-header">
+          <h2>All leads ({filteredLeads.length} results)</h2>
+        </div>
+
+        <div className="table-container">
+          <table className="leads-table">
+            <thead>
               <tr>
-                <td colSpan={6} style={{ padding: '2rem', textAlign: 'center', color: '#64748b' }}>
-                  {searchTerm ? 'No leads match your search criteria' : 'No leads found - Lead management system needs to be implemented'}
-                </td>
+                <th>Client</th>
+                <th>Title</th>
+                <th>Property</th>
+                <th>Contact</th>
+                <th>Requested</th>
+                <th>Status</th>
               </tr>
-            ) : (
-              filteredLeads.map((lead, index) => (
-                <tr 
-                  key={lead.id}
-                  onClick={() => showPlaceholderModal('Lead Detail Management')}
-                  style={{ 
-                    cursor: 'pointer',
-                    borderBottom: index < filteredLeads.length - 1 ? '1px solid #f1f5f9' : 'none'
-                  }}
-                  className="clickable-row"
-                >
-                  <td style={{ padding: '1rem' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-                      <input type="checkbox" onClick={(e) => e.stopPropagation()} />
-                      <div>
-                        <div style={{ fontWeight: '500', color: '#1f2937' }}>
-                          {lead.client_name}
-                        </div>
-                        <div style={{ fontSize: '0.875rem', color: '#64748b' }}>
-                          {lead.contact_name}
-                        </div>
-                      </div>
+            </thead>
+            <tbody>
+              {filteredLeads.map((lead) => (
+                <tr key={lead.id} className="lead-row">
+                  <td className="client-cell">
+                    <div className="client-info">
+                      <div className="client-name">{lead.company_name}</div>
                     </div>
                   </td>
-                  <td style={{ padding: '1rem' }}>
-                    <div style={{ fontSize: '0.875rem', color: '#1f2937' }}>
-                      {lead.service_type}
-                    </div>
-                    {lead.estimated_value && (
-                      <div style={{ fontSize: '0.875rem', color: '#64748b' }}>
-                        Est. £{lead.estimated_value}
-                      </div>
-                    )}
+                  <td className="title-cell">
+                    <div className="lead-title">{lead.service_type}</div>
                   </td>
-                  <td style={{ padding: '1rem' }}>
-                    <div style={{ fontSize: '0.875rem', color: '#1f2937', maxWidth: '200px' }}>
-                      {lead.property_address}
+                  <td className="property-cell">
+                    <div className="property-info">
+                      <div className="property-address">{lead.address || 'No address provided'}</div>
+                      <div className="property-postcode">{lead.postcode}</div>
                     </div>
                   </td>
-                  <td style={{ padding: '1rem' }}>
-                    <div style={{ fontSize: '0.875rem', color: '#1f2937' }}>
-                      {lead.phone}
-                    </div>
-                    <div style={{ fontSize: '0.875rem', color: '#64748b' }}>
-                      {lead.email}
+                  <td className="contact-cell">
+                    <div className="contact-info">
+                      <div className="contact-name">{lead.contact_name}</div>
+                      <div className="contact-email">{lead.contact_email}</div>
                     </div>
                   </td>
-                  <td style={{ padding: '1rem' }}>
-                    <div style={{ fontSize: '0.875rem', color: '#64748b' }}>
+                  <td className="requested-cell">
+                    <div className="requested-date">
                       {new Date(lead.created_at).toLocaleDateString('en-GB', {
                         day: 'numeric',
                         month: 'short'
                       })}
                     </div>
                   </td>
-                  <td style={{ padding: '1rem' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                      <div style={{ 
-                        width: '8px', 
-                        height: '8px', 
-                        borderRadius: '50%', 
-                        backgroundColor: getStageColor(lead.lead_stage)
-                      }}></div>
-                      <span style={{ fontSize: '0.875rem', color: '#1f2937' }}>
-                        {getStageLabel(lead.lead_stage)}
-                      </span>
-                    </div>
+                  <td className="status-cell">
+                    <span 
+                      className={`status-badge status-${lead.lead_status.toLowerCase()}`}
+                      style={{ backgroundColor: lead.status_color }}
+                    >
+                      {lead.lead_status}
+                    </span>
                   </td>
                 </tr>
-              ))
-            )}
-          </tbody>
-        </table>
-      </div>
+              ))}
+            </tbody>
+          </table>
 
-      {/* Backend Implementation Notice */}
-      <div style={{ 
-        backgroundColor: '#fef3c7', 
-        border: '1px solid #f59e0b', 
-        borderRadius: '8px', 
-        padding: '1rem', 
-        marginTop: '1.5rem',
-        display: 'flex',
-        alignItems: 'center',
-        gap: '0.75rem'
-      }}>
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#f59e0b" strokeWidth="2">
-          <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" />
-          <line x1="12" y1="9" x2="12" y2="13" />
-          <line x1="12" y1="17" x2="12.01" y2="17" />
-        </svg>
-        <div>
-          <div style={{ fontWeight: '600', color: '#92400e', marginBottom: '0.25rem' }}>
-            Backend Implementation Required
-          </div>
-          <div style={{ fontSize: '0.875rem', color: '#92400e', lineHeight: '1.4' }}>
-            Lead management system requires backend implementation including: leads table, lead stages, lead sources, 
-            lead assignments, lead activities, conversion tracking, and integration with customer/property data.
-          </div>
+          {filteredLeads.length === 0 && (
+            <div className="empty-state">
+              <div className="empty-icon">📋</div>
+              <h3>No leads found</h3>
+              <p>No leads match your current filters. Try adjusting your search criteria or add a new lead.</p>
+            </div>
+          )}
         </div>
       </div>
 
-      {/* Placeholder Modal */}
-      {showPlaceholder && (
-        <div style={{ 
-          position: 'fixed', 
-          top: 0, 
-          left: 0, 
-          right: 0, 
-          bottom: 0, 
-          backgroundColor: 'rgba(0,0,0,0.5)', 
-          display: 'flex', 
-          alignItems: 'center', 
-          justifyContent: 'center',
-          zIndex: 1000
-        }}>
-          <div style={{ 
-            backgroundColor: 'white', 
-            borderRadius: '8px', 
-            padding: '2rem', 
-            maxWidth: '500px', 
-            width: '90%',
-            boxShadow: '0 10px 25px rgba(0,0,0,0.1)'
-          }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '1rem' }}>
-              <div style={{ width: '40px', height: '40px', backgroundColor: '#fef3c7', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#f59e0b" strokeWidth="2">
-                  <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" />
-                  <line x1="12" y1="9" x2="12" y2="13" />
-                  <line x1="12" y1="17" x2="12.01" y2="17" />
-                </svg>
-              </div>
-              <div>
-                <h3 style={{ fontSize: '1.25rem', fontWeight: '600', color: '#1f2937', margin: 0 }}>Feature Coming Soon</h3>
-                <p style={{ fontSize: '0.875rem', color: '#64748b', margin: '0.25rem 0 0 0' }}>{showPlaceholder}</p>
-              </div>
-            </div>
-            
-            <p style={{ color: '#64748b', marginBottom: '1.5rem', lineHeight: '1.5' }}>
-              This feature requires backend implementation for lead management system including lead tracking, 
-              stage management, conversion analytics, and integration with your existing customer and property data.
-            </p>
-            
-            <div style={{ display: 'flex', gap: '0.75rem', justifyContent: 'flex-end' }}>
+      {/* Add Lead Modal */}
+      {showAddModal && (
+        <div className="modal-overlay" onClick={() => setShowAddModal(false)}>
+          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+            <div className="modal-header">
+              <h2>Add New Lead</h2>
               <button 
-                onClick={closePlaceholderModal}
-                style={{ 
-                  backgroundColor: '#3b82f6', 
-                  color: 'white', 
-                  border: 'none', 
-                  borderRadius: '6px', 
-                  padding: '0.75rem 1.5rem', 
-                  fontSize: '0.875rem',
-                  cursor: 'pointer'
-                }}
+                className="modal-close-btn"
+                onClick={() => setShowAddModal(false)}
               >
-                Got it
+                ×
               </button>
             </div>
+
+            <form onSubmit={handleAddLead} className="modal-form">
+              <div className="form-grid">
+                <div className="form-group">
+                  <label>Company Name *</label>
+                  <input
+                    type="text"
+                    value={formData.company_name}
+                    onChange={(e) => setFormData({...formData, company_name: e.target.value})}
+                    required
+                  />
+                </div>
+
+                <div className="form-group">
+                  <label>Contact Name *</label>
+                  <input
+                    type="text"
+                    value={formData.contact_name}
+                    onChange={(e) => setFormData({...formData, contact_name: e.target.value})}
+                    required
+                  />
+                </div>
+
+                <div className="form-group">
+                  <label>Contact Email *</label>
+                  <input
+                    type="email"
+                    value={formData.contact_email}
+                    onChange={(e) => setFormData({...formData, contact_email: e.target.value})}
+                    required
+                  />
+                </div>
+
+                <div className="form-group">
+                  <label>Contact Phone</label>
+                  <input
+                    type="tel"
+                    value={formData.contact_phone}
+                    onChange={(e) => setFormData({...formData, contact_phone: e.target.value})}
+                  />
+                </div>
+
+                <div className="form-group">
+                  <label>Service Type</label>
+                  <select
+                    value={formData.service_type}
+                    onChange={(e) => setFormData({...formData, service_type: e.target.value})}
+                  >
+                    <option value="Septic Tank Installation">Septic Tank Installation</option>
+                    <option value="Septic Tank Maintenance">Septic Tank Maintenance</option>
+                    <option value="Septic Tank Repair">Septic Tank Repair</option>
+                    <option value="Multiple Septic Systems">Multiple Septic Systems</option>
+                    <option value="Consultation">Consultation</option>
+                  </select>
+                </div>
+
+                <div className="form-group">
+                  <label>Priority</label>
+                  <select
+                    value={formData.priority}
+                    onChange={(e) => setFormData({...formData, priority: e.target.value})}
+                  >
+                    <option value="Low">Low</option>
+                    <option value="Medium">Medium</option>
+                    <option value="High">High</option>
+                  </select>
+                </div>
+
+                <div className="form-group full-width">
+                  <label>Address</label>
+                  <input
+                    type="text"
+                    value={formData.address}
+                    onChange={(e) => setFormData({...formData, address: e.target.value})}
+                  />
+                </div>
+
+                <div className="form-group">
+                  <label>Postcode</label>
+                  <input
+                    type="text"
+                    value={formData.postcode}
+                    onChange={(e) => setFormData({...formData, postcode: e.target.value})}
+                  />
+                </div>
+
+                <div className="form-group">
+                  <label>Estimated Value (£)</label>
+                  <input
+                    type="number"
+                    value={formData.estimated_value}
+                    onChange={(e) => setFormData({...formData, estimated_value: e.target.value})}
+                    min="0"
+                    step="0.01"
+                  />
+                </div>
+
+                <div className="form-group full-width">
+                  <label>Notes</label>
+                  <textarea
+                    value={formData.notes}
+                    onChange={(e) => setFormData({...formData, notes: e.target.value})}
+                    rows={3}
+                  />
+                </div>
+              </div>
+
+              <div className="modal-actions">
+                <button type="button" className="btn btn-secondary" onClick={() => setShowAddModal(false)}>
+                  Cancel
+                </button>
+                <button type="submit" className="btn btn-primary">
+                  Add Lead
+                </button>
+              </div>
+            </form>
           </div>
         </div>
       )}

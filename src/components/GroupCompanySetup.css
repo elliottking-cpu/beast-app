@@ -138,23 +138,47 @@
 
 .form-actions {
   display: flex;
-  justify-content: center;
+  gap: 1rem;
+  justify-content: space-between;
   margin-top: 1rem;
   padding-top: 1rem;
   border-top: 1px solid #e2e8f0;
 }
 
+.back-button {
+  flex: 1;
+  background: transparent;
+  color: #718096;
+  border: 2px solid #e2e8f0;
+  padding: 1rem;
+  font-size: 1rem;
+  font-weight: 600;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.back-button:hover:not(:disabled) {
+  background: #f7fafc;
+  border-color: #cbd5e0;
+}
+
+.back-button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
 .submit-button {
+  flex: 2;
   background: linear-gradient(45deg, #667eea, #764ba2);
   color: white;
   border: none;
-  padding: 1rem 3rem;
+  padding: 1rem;
   font-size: 1.1rem;
   font-weight: 600;
   border-radius: 8px;
   cursor: pointer;
   transition: all 0.2s ease;
-  min-width: 200px;
 }
 
 .submit-button:hover:not(:disabled) {

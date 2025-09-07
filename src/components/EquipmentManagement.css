@@ -1867,109 +1867,113 @@
   box-shadow: 0 6px 16px rgba(16, 185, 129, 0.3);
 }
 
-/* Employee card and link styles */
-.employee-card-link {
-  text-decoration: none;
-  color: inherit;
-  display: block;
-  transition: all 0.2s ease;
+/* Lead Management Styles */
+.company-info {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
 }
 
-.employee-card-link:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+.company-name {
+  font-weight: 600;
+  color: #1e293b;
 }
 
-.employee-card-link:hover .equipment-name {
-  color: #2563eb;
+.company-address {
+  font-size: 0.875rem;
+  color: #64748b;
 }
 
-.employee-name-link {
-  color: #2563eb;
-  text-decoration: none;
-  font-weight: 500;
-  transition: color 0.2s ease;
-}
-
-.employee-name-link:hover {
-  color: #1d4ed8;
-  text-decoration: underline;
-}
-
-/* Client and Property specific styles */
 .contact-info {
   display: flex;
   flex-direction: column;
-  gap: 2px;
+  gap: 0.25rem;
 }
 
-.contact-info > div:first-child {
-  font-weight: 500;
-  color: #1f2937;
+.contact-name {
+  font-weight: 600;
+  color: #1e293b;
 }
 
-.contact-info > div:not(:first-child) {
-  font-size: 0.875rem;
-  color: #6b7280;
-}
-
-.address-info {
+.contact-details {
   display: flex;
   flex-direction: column;
-  gap: 2px;
-}
-
-.address-info > div:first-child {
-  font-weight: 500;
-  color: #1f2937;
-}
-
-.address-info > div:not(:first-child) {
+  gap: 0.125rem;
   font-size: 0.875rem;
-  color: #6b7280;
+  color: #64748b;
 }
 
-.tank-info {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
+.value-cell {
+  font-weight: 600;
+  color: #059669;
 }
 
-.tank-info > div:first-child {
-  font-weight: 500;
-  color: #1f2937;
-}
-
-.access-notes {
-  max-width: 200px;
+.date-cell {
   font-size: 0.875rem;
-  color: #6b7280;
-  line-height: 1.4;
+  color: #64748b;
 }
 
-.status-badge.domestic {
-  background-color: #dbeafe;
-  color: #1e40af;
+/* Status badges */
+.status-badge {
+  padding: 0.25rem 0.75rem;
+  border-radius: 12px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
 }
 
-.status-badge.commercial {
-  background-color: #fef3c7;
-  color: #92400e;
+.status-new {
+  background: #dbeafe;
+  color: #1d4ed8;
 }
 
-/* Clickable table rows */
-.clickable-row {
-  transition: all 0.2s ease;
+.status-contacted {
+  background: #fef3c7;
+  color: #d97706;
 }
 
-.clickable-row:hover {
-  background-color: #f8fafc;
-  transform: translateY(-1px);
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+.status-qualified {
+  background: #d1fae5;
+  color: #059669;
 }
 
-.view-indicator {
-  font-size: 0.875rem;
-  color: #3b82f6;
-  font-weight: 500;
+.status-proposal {
+  background: #e0e7ff;
+  color: #6366f1;
+}
+
+.status-won {
+  background: #dcfce7;
+  color: #16a34a;
+}
+
+.status-lost {
+  background: #fee2e2;
+  color: #dc2626;
+}
+
+/* Priority badges */
+.priority-badge {
+  padding: 0.25rem 0.75rem;
+  border-radius: 12px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.priority-high {
+  background: #fee2e2;
+  color: #dc2626;
+}
+
+.priority-medium {
+  background: #fef3c7;
+  color: #d97706;
+}
+
+.priority-low {
+  background: #f0f9ff;
+  color: #0284c7;
 }
