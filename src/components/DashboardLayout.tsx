@@ -158,6 +158,7 @@ const DashboardLayout = () => {
   }
   const [user, setUser] = useState<User | null>(null)
   const [businessUnit, setBusinessUnit] = useState<BusinessUnit | null>(null)
+  const [contextBusinessUnit, setContextBusinessUnit] = useState<BusinessUnit | null>(null)
   const [departments, setDepartments] = useState<Department[]>([])
   const [childBusinessUnits, setChildBusinessUnits] = useState<BusinessUnit[]>([])
   const [childBusinessUnitDepartments, setChildBusinessUnitDepartments] = useState<{[key: string]: Department[]}>({})
@@ -244,13 +245,15 @@ const DashboardLayout = () => {
 
   const updateBusinessUnitContext = () => {
     try {
-      // Only update the business unit context, don't reload sidebar data
+      // Only update the context business unit for content filtering, keep main business unit for sidebar
       if (companyName && businessUnitCache[companyName]) {
         const targetBusinessUnit = businessUnitCache[companyName]
-        console.log('🔄 NAVIGATION: Switching to business unit:', targetBusinessUnit.name, '(sidebar should NOT reload)')
-        setBusinessUnit(targetBusinessUnit)
+        console.log('🔄 NAVIGATION: Switching context to business unit:', targetBusinessUnit.name, '(sidebar should NOT reload)')
+        setContextBusinessUnit(targetBusinessUnit)
       } else {
         console.warn('Business unit not found in cache:', companyName)
+        // If no specific company in URL, use the main business unit as context
+        setContextBusinessUnit(businessUnit)
       }
     } catch (error) {
       console.error('Error updating business unit context:', error)
@@ -330,6 +333,8 @@ const DashboardLayout = () => {
       }
 
       setBusinessUnit(targetBusinessUnitData)
+      // Initially, context business unit is the same as main business unit
+      setContextBusinessUnit(targetBusinessUnitData)
 
       // Load departments for this business unit (simplified approach)
       const { data: departmentsData, error: departmentsError } = await supabase
