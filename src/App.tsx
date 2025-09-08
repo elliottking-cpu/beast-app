@@ -19,6 +19,7 @@ import RegionalEmployees from './components/RegionalEmployees.tsx'
 import AddBusinessUnit from './components/AddBusinessUnit.tsx'
 import EmployeeDetail from './components/EmployeeDetail.tsx'
 import LeadManagement from './components/LeadManagement.tsx'
+import ScheduleManagement from './components/ScheduleManagement.tsx'
 import './App.css'
 
 function App() {
@@ -55,6 +56,7 @@ function App() {
             <Route path="group-marketing" element={<Dashboard />} />
             <Route path="group-app-settings" element={<Dashboard />} />
             <Route path="sales/leads" element={<LeadManagement />} />
+            <Route path="schedule" element={<ScheduleManagement key={window.location.pathname} />} />
             <Route path="hr/employees" element={<RegionalEmployees />} />
             <Route path="hr/employees/:employeeId" element={<EmployeeDetail />} />
             

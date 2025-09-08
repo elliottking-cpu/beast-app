@@ -594,22 +594,32 @@ const DashboardLayout = () => {
     const pathParts = currentPath.split('/').filter(part => part)
     const currentCompanySlug = pathParts[0] || ''
     
-    // For regional business units, use the unit name if provided
-    let companySlug = businessUnit?.name?.toLowerCase().replace(/\s+/g, '-') || 'company'
-    if (unitName) {
-      companySlug = unitName.toLowerCase().replace(/\s+/g, '-')
-    }
+    // Determine which company slug to use for comparison
+    let companySlug: string
     
-    // If we're on a regional page, use the current URL's company slug
-    if (currentCompanySlug && currentCompanySlug !== companySlug) {
-      companySlug = currentCompanySlug
+    if (unitName) {
+      // If unitName is provided (for child business units), use that
+      companySlug = unitName.toLowerCase().replace(/\s+/g, '-')
+    } else {
+      // Otherwise use the current URL's company slug
+      companySlug = currentCompanySlug || businessUnit?.name?.toLowerCase().replace(/\s+/g, '-') || 'company'
     }
     
     const fullPath = `/${companySlug}${pagePath}`
     const isActive = currentPath === fullPath
     
     // Debug logging (can be removed in production)
-    // console.log('Page Active Check:', { pagePath, currentPath, fullPath, isActive })
+    if (pagePath === '/schedule') {
+      console.log('🎯 Schedule Page Active Check:', { 
+        pagePath, 
+        unitName, 
+        currentPath, 
+        currentCompanySlug, 
+        companySlug, 
+        fullPath, 
+        isActive 
+      })
+    }
     
     return isActive
   }

@@ -41,6 +41,7 @@ interface ScheduleEvent {
 
 const ScheduleManagement: React.FC = () => {
   const { companyName } = useParams<{ companyName: string }>()
+  console.log('🏗️ ScheduleManagement component render - companyName from URL:', companyName)
   const [businessUnit, setBusinessUnit] = useState<BusinessUnit | null>(null)
   const [employees, setEmployees] = useState<Employee[]>([])
   const [equipment, setEquipment] = useState<Equipment[]>([])
@@ -60,7 +61,18 @@ const ScheduleManagement: React.FC = () => {
   const constructionFilterOptions = ['All Job Types', 'Excavation', 'Pipe Installation', 'Maintenance', 'Emergency Repairs']
 
   useEffect(() => {
+    console.log('🔄 Schedule useEffect triggered - companyName changed to:', companyName)
     loadScheduleData()
+  }, [companyName])
+
+  // Force component reset when business unit changes
+  useEffect(() => {
+    console.log('🔄 Schedule component mounted/remounted for:', companyName)
+    // Reset all state when business unit changes
+    setEmployees([])
+    setEquipment([])
+    setScheduleEvents([])
+    setBusinessUnit(null)
   }, [companyName])
 
   const loadScheduleData = async () => {
@@ -73,12 +85,20 @@ const ScheduleManagement: React.FC = () => {
         .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
         .join(' ')
 
+      console.log('🔍 Schedule Debug - URL companyName:', companyName)
+      console.log('🔍 Schedule Debug - Converted businessUnitName:', businessUnitName)
+
       // Load business unit
       const { data: buData, error: buError } = await supabase
         .from('business_units')
         .select('id, name, business_unit_type_id')
         .eq('name', businessUnitName)
         .single()
+
+      console.log('🔍 Schedule Debug - Found business unit:', buData)
+      console.log('🔍 Schedule Debug - Looking for company name:', companyName)
+      console.log('🔍 Schedule Debug - Business unit ID being used:', buData.id)
+      console.log('🔍 Schedule Debug - Business unit error:', buError)
 
       if (buError) {
         console.error('Error loading business unit:', buError)
@@ -87,70 +107,162 @@ const ScheduleManagement: React.FC = () => {
 
       setBusinessUnit(buData)
 
-      // Load sample data for demonstration
-      const sampleEmployees: Employee[] = [
-        { id: '1', first_name: 'Elliott', last_name: 'King', department_name: 'Transport', job_role_name: 'Driver', skills: ['HGV License', 'Tanker Operation'] },
-        { id: '2', first_name: 'Calem', last_name: 'Devlin', department_name: 'Transport', job_role_name: 'Driver', skills: ['HGV License', 'Jetvac Operation'] },
-        { id: '3', first_name: 'Theo', last_name: 'Waddington', department_name: 'Surveying', job_role_name: 'Surveyor', skills: ['CCTV Survey', 'Drain Inspection'] },
-        { id: '4', first_name: 'Micah', last_name: 'Klos', department_name: 'Construction', job_role_name: 'Technician', skills: ['Excavation', 'Pipe Installation'] },
-        { id: '5', first_name: 'Olivia', last_name: 'King', department_name: 'Construction', job_role_name: 'Supervisor', skills: ['Project Management', 'Health & Safety'] },
-        { id: '6', first_name: 'Wayne', last_name: 'Laird', department_name: 'Transport', job_role_name: 'Driver', skills: ['HGV License', 'Tanker Operation'] },
-        { id: '7', first_name: 'William', last_name: 'Ruddock', department_name: 'Surveying', job_role_name: 'Senior Surveyor', skills: ['CCTV Survey', 'Report Writing'] }
-      ]
+      // Load real employees for this business unit
+      const { data: employeesData, error: employeesError } = await supabase
+        .from('users')
+        .select(`
+          id,
+          first_name,
+          last_name,
+          departments!inner(name),
+          job_roles!inner(name),
+          employee_skills!left(
+            skills!inner(name)
+          )
+        `)
+        .eq('business_unit_id', buData.id)
+        .eq('is_active', true)
 
-      const sampleEquipment: Equipment[] = [
-        { id: '1', name: 'Jet Vac 16,000L', model: 'JV16000', type: 'JETVAC', capacity: 16000 },
-        { id: '2', name: 'Jet Vac 9000L', model: 'JV9000', type: 'JETVAC', capacity: 9000 },
-        { id: '3', name: 'Tanker 2 - 21,500L', model: 'T21500', type: 'TANKER', capacity: 21500 },
-        { id: '4', name: 'Tanker 21,500L Blue', model: 'T21500B', type: 'TANKER', capacity: 21500 }
-      ]
+      if (employeesError) {
+        console.error('Error loading employees:', employeesError)
+      } else {
+        console.log('🔍 Schedule Debug - Raw employees data:', employeesData)
+        const formattedEmployees: Employee[] = employeesData.map(emp => ({
+          id: emp.id,
+          first_name: emp.first_name,
+          last_name: emp.last_name,
+          department_name: emp.departments?.name || 'Unknown',
+          job_role_name: emp.job_roles?.name || 'Unknown',
+          skills: emp.employee_skills?.map((es: any) => es.skills?.name).filter(Boolean) || []
+        }))
+        console.log('🔍 Schedule Debug - Formatted employees:', formattedEmployees)
+        setEmployees(formattedEmployees)
+      }
 
-      const sampleEvents: ScheduleEvent[] = [
-        {
-          id: '1',
-          title: 'S43 3BY',
-          start_time: '09:00',
-          end_time: '11:00',
-          employee_id: '1',
-          job_code: 'S43 3BY',
-          status: 'SCHEDULED',
-          department: 'Transport'
-        },
-        {
-          id: '2',
-          title: 'S75 3EF',
-          start_time: '12:00',
-          end_time: '14:00',
-          employee_id: '1',
-          job_code: 'S75 3EF',
-          status: 'SCHEDULED',
-          department: 'Transport'
-        },
-        {
-          id: '3',
-          title: 'Pump Station to Foul Drain Connection - YO61 1TP',
-          start_time: '08:00',
-          end_time: '17:00',
-          employee_id: '3',
-          job_code: 'YO61 1TP',
-          status: 'IN_PROGRESS',
-          department: 'Surveying'
-        },
-        {
-          id: '4',
-          title: 'Main Village Tank - Next to Railway - YO7',
-          start_time: '14:00',
-          end_time: '16:00',
-          employee_id: '4',
-          job_code: 'YO7',
-          status: 'SCHEDULED',
-          department: 'Construction'
-        }
-      ]
+      // Load real equipment for this business unit
+      const equipmentData: Equipment[] = []
 
-      setEmployees(sampleEmployees)
-      setEquipment(sampleEquipment)
-      setScheduleEvents(sampleEvents)
+      // Load tanker equipment
+      const { data: tankersData, error: tankersError } = await supabase
+        .from('tanker_equipment')
+        .select('id, equipment_name, registration_number, waste_tank_capacity_litres')
+        .eq('business_unit_id', buData.id)
+        .eq('is_active', true)
+
+      if (!tankersError && tankersData) {
+        tankersData.forEach(tanker => {
+          equipmentData.push({
+            id: tanker.id,
+            name: tanker.equipment_name,
+            model: tanker.registration_number || '',
+            type: 'TANKER',
+            capacity: tanker.waste_tank_capacity_litres
+          })
+        })
+      }
+
+      // Load jetvac equipment
+      const { data: jetvacsData, error: jetvacsError } = await supabase
+        .from('jetvac_equipment')
+        .select('id, equipment_name, registration_number, pressure_psi')
+        .eq('business_unit_id', buData.id)
+        .eq('is_active', true)
+
+      if (!jetvacsError && jetvacsData) {
+        jetvacsData.forEach(jetvac => {
+          equipmentData.push({
+            id: jetvac.id,
+            name: jetvac.equipment_name,
+            model: jetvac.registration_number || '',
+            type: 'JETVAC',
+            capacity: jetvac.pressure_psi
+          })
+        })
+      }
+
+      setEquipment(equipmentData)
+
+      // Load real schedule visits for this business unit
+      console.log('🔍 Schedule Debug - About to query visits with business_unit_id:', buData.id)
+      console.log('🔍 Schedule Debug - Today date filter:', new Date().toISOString().split('T')[0])
+      
+      const { data: visitsData, error: visitsError } = await supabase
+        .from('schedule_visits')
+        .select(`
+          id,
+          scheduled_date,
+          start_time,
+          end_time,
+          assigned_employee_id,
+          assigned_equipment_id,
+          equipment_type,
+          notes,
+          job_id,
+          department_id,
+          status_id,
+          business_unit_id
+        `)
+        .eq('business_unit_id', buData.id)
+        .gte('scheduled_date', new Date().toISOString().split('T')[0]) // Today and future
+        .order('scheduled_date')
+        .order('start_time')
+
+      // Get job details separately
+      let jobsData = []
+      let departmentsData = []
+      let statusesData = []
+      
+      if (!visitsError && visitsData && visitsData.length > 0) {
+        const jobIds = [...new Set(visitsData.map(v => v.job_id))]
+        const deptIds = [...new Set(visitsData.map(v => v.department_id))]
+        const statusIds = [...new Set(visitsData.map(v => v.status_id))]
+
+        const { data: jobs } = await supabase
+          .from('schedule_jobs')
+          .select('id, job_code, title')
+          .in('id', jobIds)
+
+        const { data: depts } = await supabase
+          .from('departments')
+          .select('id, name')
+          .in('id', deptIds)
+
+        const { data: statuses } = await supabase
+          .from('visit_statuses')
+          .select('id, name')
+          .in('id', statusIds)
+
+        jobsData = jobs || []
+        departmentsData = depts || []
+        statusesData = statuses || []
+      }
+
+      if (visitsError) {
+        console.error('Error loading visits:', visitsError)
+      } else {
+        console.log('🔍 Schedule Debug - Raw visits data for', buData.name, ':', visitsData)
+        console.log('🔍 Schedule Debug - Business Unit ID:', buData.id)
+        const formattedEvents: ScheduleEvent[] = visitsData.map(visit => {
+          const job = jobsData.find(j => j.id === visit.job_id)
+          const dept = departmentsData.find(d => d.id === visit.department_id)
+          const status = statusesData.find(s => s.id === visit.status_id)
+          
+          return {
+            id: visit.id,
+            title: job?.job_code || 'Unknown Job',
+            start_time: visit.start_time,
+            end_time: visit.end_time,
+            employee_id: visit.assigned_employee_id,
+            equipment_id: visit.assigned_equipment_id,
+            job_code: job?.job_code || '',
+            status: status?.name?.toUpperCase() || 'SCHEDULED',
+            department: dept?.name || 'Unknown'
+          }
+        })
+        console.log('🔍 Schedule Debug - Formatted events for', buData.name, ':', formattedEvents)
+        console.log('🔍 Schedule Debug - Event count:', formattedEvents.length)
+        setScheduleEvents(formattedEvents)
+      }
 
     } catch (error) {
       console.error('Error loading schedule data:', error)
@@ -228,21 +340,21 @@ const ScheduleManagement: React.FC = () => {
   }
 
   const getUnscheduledForDepartment = (department: string) => {
-    // Sample unscheduled items by department
-    const unscheduledItems = {
-      'Transport': [
-        { id: 'u1', code: 'HD8 0UF', time: 'anytime', type: 'Tank Emptying' },
-        { id: 'u2', code: 'YO42 4TB', time: 'anytime', type: 'Jetvac Service' }
-      ],
-      'Surveying': [
-        { id: 'u3', code: 'YO42 4TD', time: 'anytime', type: 'CCTV Survey' }
-      ],
-      'Construction': [
-        { id: 'u4', code: 'S43 7GH', time: 'anytime', type: 'Pipe Repair' },
-        { id: 'u5', code: 'YO61 2XP', time: 'anytime', type: 'Tank Installation' }
-      ]
-    }
-    return unscheduledItems[department] || []
+    // Filter real schedule events by department
+    const departmentEvents = scheduleEvents.filter(event => 
+      event.department === department || 
+      (department === 'Transport' && (event.department === 'Transport' || event.department === 'Unknown')) ||
+      (department === 'Surveying' && event.department === 'Surveying') ||
+      (department === 'Construction' && event.department === 'Construction')
+    )
+    
+    // Convert to unscheduled format
+    return departmentEvents.map(event => ({
+      id: event.id,
+      code: event.job_code,
+      time: `${event.start_time} - ${event.end_time}`,
+      type: event.title || event.status
+    }))
   }
 
   const renderDepartmentSchedule = (
