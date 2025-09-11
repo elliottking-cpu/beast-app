@@ -51,7 +51,7 @@ const AISetupPage: React.FC = () => {
   const checkAIStatus = async () => {
     try {
       // Check if AI is already configured
-      const { data, error } = await supabase.functions.invoke('ai-chat', {
+      const { data, error } = await supabase.functions.invoke('ai-chat-v28', {
         body: { query: 'test', context: { test: true } }
       })
       

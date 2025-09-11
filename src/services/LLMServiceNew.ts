@@ -52,8 +52,8 @@ class LLMService {
       // Get user context automatically
       const userContext = await this.getUserContext()
       
-      // Call Supabase Edge Function for AI processing
-      const { data, error } = await supabase.functions.invoke('ai-chat', {
+      // Call Supabase Edge Function for AI processing (NEXUS with Claude 4 Sonnet)
+      const { data, error } = await supabase.functions.invoke('ai-chat-nexus', {
         body: {
           query: request.query,
           context: request.context,

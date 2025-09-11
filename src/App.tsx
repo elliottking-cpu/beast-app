@@ -21,7 +21,7 @@ import AddBusinessUnit from './components/AddBusinessUnit.tsx'
 import EmployeeDetail from './components/EmployeeDetail.tsx'
 import LeadManagement from './components/LeadManagement.tsx'
 import ScheduleManagement from './components/ScheduleManagement.tsx'
-import BusinessBrainWorkspaceMinimal from './components/BusinessBrainWorkspaceMinimal.tsx'
+import BusinessBrainWorkspaceClean from './components/BusinessBrainWorkspaceClean'
 import AISetupPage from './components/AISetupPage.tsx'
 import './App.css'
 
@@ -47,7 +47,7 @@ function App() {
             <Route path="services" element={<ServiceManagement />} />
             <Route path="services/:serviceId" element={<ServiceDetail />} />
             <Route path="business-management" element={<Dashboard />} />
-                <Route path="business-management/business-brain" element={<BusinessBrainWorkspaceMinimal />} />
+                <Route path="business-management/business-brain" element={<BusinessBrainWorkspaceClean />} />
           <Route path="ai-setup" element={<AISetupPage />} />
             <Route path="business-management/employees" element={<EmployeeManagement />} />
             <Route path="business-management/employees/:employeeId" element={<EmployeeDetail />} />
