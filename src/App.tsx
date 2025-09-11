@@ -10,6 +10,7 @@ import BlankDashboard from './components/BlankDashboard.tsx'
 import EquipmentManagement from './components/EquipmentManagement.tsx'
 import SkillsManagement from './components/SkillsManagement.tsx'
 import ServiceManagement from './components/ServiceManagement.tsx'
+import ServiceDetail from './components/ServiceDetail.tsx'
 import EquipmentDetail from './components/EquipmentDetail.tsx'
 import EquipmentCategoriesManagement from './components/EquipmentCategoriesManagement.tsx'
 import EquipmentCategoryDetail from './components/EquipmentCategoryDetail.tsx'
@@ -20,6 +21,8 @@ import AddBusinessUnit from './components/AddBusinessUnit.tsx'
 import EmployeeDetail from './components/EmployeeDetail.tsx'
 import LeadManagement from './components/LeadManagement.tsx'
 import ScheduleManagement from './components/ScheduleManagement.tsx'
+import BusinessBrainWorkspaceMinimal from './components/BusinessBrainWorkspaceMinimal.tsx'
+import AISetupPage from './components/AISetupPage.tsx'
 import './App.css'
 
 function App() {
@@ -42,7 +45,10 @@ function App() {
             <Route path="equipment/:equipmentType/:equipmentId" element={<EquipmentDetail />} />
             <Route path="skills" element={<SkillsManagement />} />
             <Route path="services" element={<ServiceManagement />} />
+            <Route path="services/:serviceId" element={<ServiceDetail />} />
             <Route path="business-management" element={<Dashboard />} />
+                <Route path="business-management/business-brain" element={<BusinessBrainWorkspaceMinimal />} />
+          <Route path="ai-setup" element={<AISetupPage />} />
             <Route path="business-management/employees" element={<EmployeeManagement />} />
             <Route path="business-management/employees/:employeeId" element={<EmployeeDetail />} />
             <Route path="business-management/add-business-unit" element={<AddBusinessUnit />} />
