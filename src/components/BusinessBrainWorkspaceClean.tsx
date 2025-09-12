@@ -1,6 +1,32 @@
 import React, { useState, useEffect, useRef } from 'react'
 import { llmService } from '../services/LLMServiceNew'
 import './BusinessBrainWorkspaceClean.css'
+import {
+  Chart as ChartJS,
+  CategoryScale,
+  LinearScale,
+  BarElement,
+  LineElement,
+  PointElement,
+  ArcElement,
+  Title,
+  Tooltip,
+  Legend,
+} from 'chart.js'
+import { Bar, Line, Pie, Doughnut } from 'react-chartjs-2'
+
+// Register Chart.js components
+ChartJS.register(
+  CategoryScale,
+  LinearScale,
+  BarElement,
+  LineElement,
+  PointElement,
+  ArcElement,
+  Title,
+  Tooltip,
+  Legend
+)
 
 // ============================================================================
 // TYPE DEFINITIONS
@@ -28,6 +54,29 @@ interface AIDisplayContent {
   title?: string
   data?: any
   component?: React.ReactNode
+  chartType?: 'bar' | 'line' | 'pie' | 'doughnut'
+  chartData?: {
+    labels: string[]
+    datasets: Array<{
+      label: string
+      data: number[]
+      backgroundColor?: string | string[]
+      borderColor?: string | string[]
+      borderWidth?: number
+    }>
+  }
+  chartOptions?: any
+  tableData?: {
+    headers: string[]
+    rows: Array<Array<string | number>>
+  }
+  formFields?: Array<{
+    name: string
+    type: string
+    label: string
+    required?: boolean
+    options?: string[]
+  }>
 }
 
 // ============================================================================
@@ -151,17 +200,47 @@ const BusinessBrainWorkspaceClean: React.FC = () => {
 
       setChatMessages(prev => [...prev, aiMessage])
       
-      // Check if Claude wants to display something in the AI panel
+      // Check if NEXUS wants to display something in the AI panel
       if (result.explanation?.includes('DISPLAY:')) {
-        // Parse display commands from Claude's response
-        const displayMatch = result.explanation.match(/DISPLAY:\s*({.*?})/s)
+        console.log('🎨 NEXUS wants to control the display panel')
+        
+        // Parse display commands from NEXUS's response
+        const displayMatch = result.explanation.match(/DISPLAY:\s*({[\s\S]*?})/m)
         if (displayMatch) {
           try {
             const displayData = JSON.parse(displayMatch[1])
+            console.log('📊 Parsed display data:', displayData)
+            
+            // Enhance display data with default chart options if it's a chart
+            if (displayData.type === 'chart' && displayData.chartData) {
+              displayData.chartOptions = {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                  legend: {
+                    position: 'top' as const,
+                  },
+                  title: {
+                    display: true,
+                    text: displayData.title || 'NEXUS Generated Chart',
+                  },
+                },
+                scales: displayData.chartType !== 'pie' && displayData.chartType !== 'doughnut' ? {
+                  y: {
+                    beginAtZero: true,
+                  },
+                } : undefined,
+              }
+            }
+            
             setAiDisplayContent(displayData)
+            console.log('✅ Display panel updated by NEXUS')
           } catch (e) {
-            console.log('Could not parse display data:', e)
+            console.error('❌ Could not parse NEXUS display data:', e)
+            console.log('Raw display match:', displayMatch[1])
           }
+        } else {
+          console.log('❌ No valid DISPLAY command found in NEXUS response')
         }
       }
       
@@ -220,57 +299,242 @@ const BusinessBrainWorkspaceClean: React.FC = () => {
               <div className="ai-display-examples">
                 <div className="example-category">
                   <h4>Financial Analysis</h4>
-                  <div className="example-item">Generate monthly revenue report</div>
-                  <div className="example-item">Show cash flow analysis</div>
+                  <div className="example-item" onClick={() => setCurrentQuery("Show me a revenue chart for the last 6 months")}>Generate monthly revenue chart</div>
+                  <div className="example-item" onClick={() => setCurrentQuery("Create a cash flow analysis table")}>Show cash flow analysis</div>
+                  <div className="example-item" onClick={() => {
+                    // Test NEXUS display control with sample chart
+                    setAiDisplayContent({
+                      type: 'chart',
+                      title: 'Sample Revenue Chart - NEXUS Test',
+                      chartType: 'bar',
+                      chartData: {
+                        labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'],
+                        datasets: [{
+                          label: 'Revenue (£)',
+                          data: [12000, 15000, 18000, 14000, 22000, 25000],
+                          backgroundColor: '#3b82f6',
+                          borderColor: '#1d4ed8',
+                          borderWidth: 2
+                        }]
+                      }
+                    })
+                  }}>🧪 Test NEXUS Chart Control</div>
                 </div>
                 <div className="example-category">
                   <h4>Operational Insights</h4>
-                  <div className="example-item">Display job completion metrics</div>
-                  <div className="example-item">Analyze customer satisfaction trends</div>
+                  <div className="example-item" onClick={() => setCurrentQuery("Display job completion metrics in a chart")}>Display job completion metrics</div>
+                  <div className="example-item" onClick={() => setCurrentQuery("Show customer data in a table")}>Analyze customer data</div>
+                  <div className="example-item" onClick={() => {
+                    // Test NEXUS table control
+                    setAiDisplayContent({
+                      type: 'table',
+                      title: 'Sample Customer Data - NEXUS Test',
+                      tableData: {
+                        headers: ['Customer', 'Type', 'Location', 'Revenue', 'Status'],
+                        rows: [
+                          ['John Smith', 'Residential', 'Leeds', '£1,200', 'Active'],
+                          ['ABC Corp', 'Commercial', 'Manchester', '£5,500', 'Active'],
+                          ['Green Valley', 'Residential', 'York', '£800', 'Pending'],
+                          ['Tech Solutions', 'Commercial', 'Birmingham', '£3,200', 'Complete']
+                        ]
+                      }
+                    })
+                  }}>🧪 Test NEXUS Table Control</div>
                 </div>
                 <div className="example-category">
                   <h4>Strategic Planning</h4>
-                  <div className="example-item">Create market expansion analysis</div>
-                  <div className="example-item">Generate performance benchmarks</div>
+                  <div className="example-item" onClick={() => setCurrentQuery("Create a business performance report")}>Create performance report</div>
+                  <div className="example-item" onClick={() => setCurrentQuery("Show me a form to add a new customer")}>Generate data entry form</div>
+                  <div className="example-item" onClick={() => {
+                    // Test NEXUS form control
+                    setAiDisplayContent({
+                      type: 'form',
+                      title: 'Add New Customer - NEXUS Test',
+                      formFields: [
+                        { name: 'firstName', type: 'text', label: 'First Name', required: true },
+                        { name: 'lastName', type: 'text', label: 'Last Name', required: true },
+                        { name: 'email', type: 'email', label: 'Email Address', required: true },
+                        { name: 'phone', type: 'tel', label: 'Phone Number' },
+                        { name: 'customerType', type: 'select', label: 'Customer Type', required: true, options: ['Residential', 'Commercial', 'Industrial'] },
+                        { name: 'address', type: 'textarea', label: 'Address' },
+                        { name: 'notes', type: 'textarea', label: 'Additional Notes' }
+                      ]
+                    })
+                  }}>🧪 Test NEXUS Form Control</div>
                 </div>
               </div>
             </div>
           </div>
         )
+        
       case 'chart':
+        if (!aiDisplayContent.chartData || !aiDisplayContent.chartType) {
+          return (
+            <div className="ai-display-content">
+              <h3>{aiDisplayContent.title || 'NEXUS Generated Chart'}</h3>
+              <div className="chart-error">
+                <p>Chart data is incomplete. NEXUS needs to provide chartType and chartData.</p>
+                <pre>{JSON.stringify(aiDisplayContent, null, 2)}</pre>
+              </div>
+            </div>
+          )
+        }
+        
+        const ChartComponent = {
+          bar: Bar,
+          line: Line,
+          pie: Pie,
+          doughnut: Doughnut
+        }[aiDisplayContent.chartType]
+        
         return (
           <div className="ai-display-content">
-            <h3>{aiDisplayContent.title || 'AI Generated Chart'}</h3>
-            <div className="chart-placeholder">
-              📊 Chart will be rendered here
-              <pre>{JSON.stringify(aiDisplayContent.data, null, 2)}</pre>
+            <div className="display-header">
+              <h3>{aiDisplayContent.title || 'NEXUS Generated Chart'}</h3>
+              <div className="chart-controls">
+                <span className="chart-type">{aiDisplayContent.chartType.toUpperCase()}</span>
+              </div>
+            </div>
+            <div className="chart-container">
+              <ChartComponent 
+                data={aiDisplayContent.chartData} 
+                options={aiDisplayContent.chartOptions}
+              />
             </div>
           </div>
         )
+        
       case 'table':
+        if (!aiDisplayContent.tableData) {
+          return (
+            <div className="ai-display-content">
+              <h3>{aiDisplayContent.title || 'NEXUS Generated Table'}</h3>
+              <div className="table-error">
+                <p>Table data is incomplete. NEXUS needs to provide tableData with headers and rows.</p>
+                <pre>{JSON.stringify(aiDisplayContent, null, 2)}</pre>
+              </div>
+            </div>
+          )
+        }
+        
         return (
           <div className="ai-display-content">
-            <h3>{aiDisplayContent.title || 'AI Generated Table'}</h3>
-            <div className="table-placeholder">
-              📋 Table will be rendered here
-              <pre>{JSON.stringify(aiDisplayContent.data, null, 2)}</pre>
+            <div className="display-header">
+              <h3>{aiDisplayContent.title || 'NEXUS Generated Table'}</h3>
+              <div className="table-controls">
+                <span className="row-count">{aiDisplayContent.tableData.rows.length} rows</span>
+              </div>
+            </div>
+            <div className="table-container">
+              <table className="nexus-table">
+                <thead>
+                  <tr>
+                    {aiDisplayContent.tableData.headers.map((header, index) => (
+                      <th key={index}>{header}</th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody>
+                  {aiDisplayContent.tableData.rows.map((row, rowIndex) => (
+                    <tr key={rowIndex}>
+                      {row.map((cell, cellIndex) => (
+                        <td key={cellIndex}>{cell}</td>
+                      ))}
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
             </div>
           </div>
         )
+        
+      case 'form':
+        if (!aiDisplayContent.formFields) {
+          return (
+            <div className="ai-display-content">
+              <h3>{aiDisplayContent.title || 'NEXUS Generated Form'}</h3>
+              <div className="form-error">
+                <p>Form data is incomplete. NEXUS needs to provide formFields array.</p>
+                <pre>{JSON.stringify(aiDisplayContent, null, 2)}</pre>
+              </div>
+            </div>
+          )
+        }
+        
+        return (
+          <div className="ai-display-content">
+            <div className="display-header">
+              <h3>{aiDisplayContent.title || 'NEXUS Generated Form'}</h3>
+              <div className="form-controls">
+                <span className="field-count">{aiDisplayContent.formFields.length} fields</span>
+              </div>
+            </div>
+            <div className="form-container">
+              <form className="nexus-form">
+                {aiDisplayContent.formFields.map((field, index) => (
+                  <div key={index} className="form-field">
+                    <label htmlFor={field.name}>
+                      {field.label}
+                      {field.required && <span className="required">*</span>}
+                    </label>
+                    {field.type === 'select' ? (
+                      <select id={field.name} name={field.name} required={field.required}>
+                        <option value="">Choose...</option>
+                        {field.options?.map((option, optIndex) => (
+                          <option key={optIndex} value={option}>{option}</option>
+                        ))}
+                      </select>
+                    ) : field.type === 'textarea' ? (
+                      <textarea 
+                        id={field.name} 
+                        name={field.name} 
+                        required={field.required}
+                        rows={4}
+                      />
+                    ) : (
+                      <input 
+                        type={field.type} 
+                        id={field.name} 
+                        name={field.name} 
+                        required={field.required}
+                      />
+                    )}
+                  </div>
+                ))}
+                <div className="form-actions">
+                  <button type="submit" className="submit-button">Submit</button>
+                  <button type="reset" className="reset-button">Reset</button>
+                </div>
+              </form>
+            </div>
+          </div>
+        )
+        
       case 'report':
         return (
           <div className="ai-display-content">
-            <h3>{aiDisplayContent.title || 'AI Generated Report'}</h3>
-            <div className="report-placeholder">
-              📄 Report will be rendered here
-              <pre>{JSON.stringify(aiDisplayContent.data, null, 2)}</pre>
+            <div className="display-header">
+              <h3>{aiDisplayContent.title || 'NEXUS Generated Report'}</h3>
+              <div className="report-controls">
+                <button className="export-button">Export PDF</button>
+              </div>
+            </div>
+            <div className="report-container">
+              <div className="report-content">
+                {typeof aiDisplayContent.data === 'string' ? (
+                  <div className="report-text" dangerouslySetInnerHTML={{ __html: aiDisplayContent.data }} />
+                ) : (
+                  <pre className="report-data">{JSON.stringify(aiDisplayContent.data, null, 2)}</pre>
+                )}
+              </div>
             </div>
           </div>
         )
+        
       default:
         return (
           <div className="ai-display-content">
-            <h3>{aiDisplayContent.title || 'AI Display'}</h3>
+            <h3>{aiDisplayContent.title || 'NEXUS Display'}</h3>
             {aiDisplayContent.component || <div>Content will appear here</div>}
           </div>
         )

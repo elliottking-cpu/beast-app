@@ -887,6 +887,362 @@ textarea:focus {
 }
 
 /* ============================================================================
+   AI DISPLAY CONTENT COMPONENTS
+   ============================================================================ */
+.ai-display-content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  padding: var(--nexus-space-xl);
+  overflow: hidden;
+}
+
+.display-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: var(--nexus-space-lg);
+  padding-bottom: var(--nexus-space-md);
+  border-bottom: 2px solid var(--nexus-gray-200);
+}
+
+.display-header h3 {
+  font-size: 1.5rem;
+  font-weight: 600;
+  margin: 0;
+  color: var(--nexus-gray-900);
+}
+
+.chart-controls,
+.table-controls,
+.form-controls,
+.report-controls {
+  display: flex;
+  gap: var(--nexus-space-md);
+  align-items: center;
+}
+
+.chart-type,
+.row-count,
+.field-count {
+  padding: var(--nexus-space-xs) var(--nexus-space-sm);
+  background: var(--nexus-accent);
+  color: var(--nexus-white);
+  border-radius: var(--nexus-radius-sm);
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+}
+
+/* ============================================================================
+   CHART COMPONENTS
+   ============================================================================ */
+.chart-container {
+  flex: 1;
+  position: relative;
+  min-height: 400px;
+  background: var(--nexus-white);
+  border-radius: var(--nexus-radius-lg);
+  padding: var(--nexus-space-lg);
+  box-shadow: var(--nexus-shadow-sm);
+  border: 1px solid var(--nexus-gray-200);
+}
+
+.chart-error {
+  padding: var(--nexus-space-lg);
+  background: var(--nexus-gray-50);
+  border-radius: var(--nexus-radius-lg);
+  border: 1px solid var(--nexus-gray-200);
+}
+
+.chart-error p {
+  color: var(--nexus-gray-700);
+  margin-bottom: var(--nexus-space-md);
+}
+
+.chart-error pre {
+  background: var(--nexus-gray-100);
+  padding: var(--nexus-space-md);
+  border-radius: var(--nexus-radius-md);
+  font-size: 0.75rem;
+  color: var(--nexus-gray-600);
+  overflow-x: auto;
+}
+
+/* ============================================================================
+   TABLE COMPONENTS
+   ============================================================================ */
+.table-container {
+  flex: 1;
+  overflow: auto;
+  background: var(--nexus-white);
+  border-radius: var(--nexus-radius-lg);
+  box-shadow: var(--nexus-shadow-sm);
+  border: 1px solid var(--nexus-gray-200);
+}
+
+.nexus-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.875rem;
+}
+
+.nexus-table thead {
+  background: var(--nexus-gray-50);
+  position: sticky;
+  top: 0;
+  z-index: 1;
+}
+
+.nexus-table th {
+  padding: var(--nexus-space-md) var(--nexus-space-lg);
+  text-align: left;
+  font-weight: 600;
+  color: var(--nexus-gray-900);
+  border-bottom: 2px solid var(--nexus-gray-200);
+}
+
+.nexus-table td {
+  padding: var(--nexus-space-md) var(--nexus-space-lg);
+  border-bottom: 1px solid var(--nexus-gray-200);
+  color: var(--nexus-gray-700);
+}
+
+.nexus-table tbody tr:hover {
+  background: var(--nexus-gray-50);
+}
+
+.nexus-table tbody tr:last-child td {
+  border-bottom: none;
+}
+
+.table-error {
+  padding: var(--nexus-space-lg);
+  background: var(--nexus-gray-50);
+  border-radius: var(--nexus-radius-lg);
+  border: 1px solid var(--nexus-gray-200);
+}
+
+.table-error p {
+  color: var(--nexus-gray-700);
+  margin-bottom: var(--nexus-space-md);
+}
+
+.table-error pre {
+  background: var(--nexus-gray-100);
+  padding: var(--nexus-space-md);
+  border-radius: var(--nexus-radius-md);
+  font-size: 0.75rem;
+  color: var(--nexus-gray-600);
+  overflow-x: auto;
+}
+
+/* ============================================================================
+   FORM COMPONENTS
+   ============================================================================ */
+.form-container {
+  flex: 1;
+  overflow: auto;
+}
+
+.nexus-form {
+  background: var(--nexus-white);
+  border-radius: var(--nexus-radius-lg);
+  padding: var(--nexus-space-xl);
+  box-shadow: var(--nexus-shadow-sm);
+  border: 1px solid var(--nexus-gray-200);
+}
+
+.form-field {
+  margin-bottom: var(--nexus-space-lg);
+}
+
+.form-field:last-of-type {
+  margin-bottom: var(--nexus-space-xl);
+}
+
+.form-field label {
+  display: block;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--nexus-gray-700);
+  margin-bottom: var(--nexus-space-sm);
+}
+
+.required {
+  color: var(--nexus-danger);
+  margin-left: var(--nexus-space-xs);
+}
+
+.form-field input,
+.form-field select,
+.form-field textarea {
+  width: 100%;
+  padding: var(--nexus-space-md);
+  border: 2px solid var(--nexus-gray-200);
+  border-radius: var(--nexus-radius-md);
+  font-size: 0.95rem;
+  font-family: var(--nexus-font-primary);
+  transition: var(--nexus-transition);
+  background: var(--nexus-white);
+}
+
+.form-field input:focus,
+.form-field select:focus,
+.form-field textarea:focus {
+  outline: none;
+  border-color: var(--nexus-accent);
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+.form-field textarea {
+  resize: vertical;
+  min-height: 100px;
+}
+
+.form-actions {
+  display: flex;
+  gap: var(--nexus-space-md);
+  justify-content: flex-end;
+  padding-top: var(--nexus-space-lg);
+  border-top: 1px solid var(--nexus-gray-200);
+}
+
+.submit-button {
+  padding: var(--nexus-space-md) var(--nexus-space-xl);
+  background: var(--nexus-accent);
+  color: var(--nexus-white);
+  border: none;
+  border-radius: var(--nexus-radius-md);
+  font-size: 0.95rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: var(--nexus-transition);
+}
+
+.submit-button:hover {
+  background: var(--nexus-accent-light);
+  transform: translateY(-1px);
+  box-shadow: var(--nexus-shadow-md);
+}
+
+.reset-button {
+  padding: var(--nexus-space-md) var(--nexus-space-xl);
+  background: var(--nexus-gray-100);
+  color: var(--nexus-gray-700);
+  border: 1px solid var(--nexus-gray-300);
+  border-radius: var(--nexus-radius-md);
+  font-size: 0.95rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: var(--nexus-transition);
+}
+
+.reset-button:hover {
+  background: var(--nexus-gray-200);
+  border-color: var(--nexus-gray-400);
+}
+
+.form-error {
+  padding: var(--nexus-space-lg);
+  background: var(--nexus-gray-50);
+  border-radius: var(--nexus-radius-lg);
+  border: 1px solid var(--nexus-gray-200);
+}
+
+.form-error p {
+  color: var(--nexus-gray-700);
+  margin-bottom: var(--nexus-space-md);
+}
+
+.form-error pre {
+  background: var(--nexus-gray-100);
+  padding: var(--nexus-space-md);
+  border-radius: var(--nexus-radius-md);
+  font-size: 0.75rem;
+  color: var(--nexus-gray-600);
+  overflow-x: auto;
+}
+
+/* ============================================================================
+   REPORT COMPONENTS
+   ============================================================================ */
+.report-container {
+  flex: 1;
+  overflow: auto;
+}
+
+.report-content {
+  background: var(--nexus-white);
+  border-radius: var(--nexus-radius-lg);
+  padding: var(--nexus-space-xl);
+  box-shadow: var(--nexus-shadow-sm);
+  border: 1px solid var(--nexus-gray-200);
+  min-height: 400px;
+}
+
+.report-text {
+  line-height: 1.6;
+  color: var(--nexus-gray-700);
+}
+
+.report-text h1,
+.report-text h2,
+.report-text h3,
+.report-text h4 {
+  color: var(--nexus-gray-900);
+  margin-top: var(--nexus-space-xl);
+  margin-bottom: var(--nexus-space-md);
+}
+
+.report-text h1 {
+  font-size: 1.875rem;
+  font-weight: 700;
+}
+
+.report-text h2 {
+  font-size: 1.5rem;
+  font-weight: 600;
+}
+
+.report-text h3 {
+  font-size: 1.25rem;
+  font-weight: 600;
+}
+
+.report-text p {
+  margin-bottom: var(--nexus-space-md);
+}
+
+.report-data {
+  background: var(--nexus-gray-50);
+  padding: var(--nexus-space-lg);
+  border-radius: var(--nexus-radius-md);
+  font-size: 0.875rem;
+  color: var(--nexus-gray-600);
+  overflow-x: auto;
+  font-family: var(--nexus-font-mono);
+}
+
+.export-button {
+  padding: var(--nexus-space-sm) var(--nexus-space-md);
+  background: var(--nexus-success);
+  color: var(--nexus-white);
+  border: none;
+  border-radius: var(--nexus-radius-md);
+  font-size: 0.875rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: var(--nexus-transition);
+}
+
+.export-button:hover {
+  background: #059669;
+  transform: translateY(-1px);
+  box-shadow: var(--nexus-shadow-sm);
+}
+
+/* ============================================================================
    ANIMATIONS & MICRO-INTERACTIONS
    ============================================================================ */
 .business-brain-clean * {
@@ -917,6 +1273,21 @@ textarea:focus {
   from {
     opacity: 0;
     transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.ai-display-content {
+  animation: slideInUp 0.4s ease-out;
+}
+
+@keyframes slideInUp {
+  from {
+    opacity: 0;
+    transform: translateY(30px);
   }
   to {
     opacity: 1;
