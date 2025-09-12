@@ -92,7 +92,7 @@ const BusinessBrainWorkspaceClean: React.FC = () => {
     {
       id: '1',
       type: 'ai',
-      content: 'Hello! I\'m NEXUS, your AI business partner. I have complete access to your business operations - from customer records to financial data, job scheduling to strategic planning. I can chat casually, analyze trends, create visualizations, generate reports, and even help you make strategic decisions. What would you like to explore today?',
+      content: 'Hello! I\'m NEXUS, your AI business partner. I have complete access to your business operations - from customer records to financial data, job scheduling to strategic planning. I can chat casually, analyze trends, create visualizations, generate reports, and even help you make strategic decisions. When I need to show you charts, tables, or forms, I\'ll open my display panel automatically. What would you like to explore today?',
       timestamp: new Date(),
       confidence: 0.98
     }
@@ -102,6 +102,7 @@ const BusinessBrainWorkspaceClean: React.FC = () => {
   const [aiDisplayContent, setAiDisplayContent] = useState<AIDisplayContent>({
     type: 'empty'
   })
+  const [showDisplayPanel, setShowDisplayPanel] = useState(false)
   const [showSettings, setShowSettings] = useState(false)
   const [selectedFiles, setSelectedFiles] = useState<File[]>([])
   const [isDragOver, setIsDragOver] = useState(false)
@@ -234,7 +235,8 @@ const BusinessBrainWorkspaceClean: React.FC = () => {
             }
             
             setAiDisplayContent(displayData)
-            console.log('✅ Display panel updated by NEXUS')
+            setShowDisplayPanel(true) // Show the display panel when NEXUS wants to use it
+            console.log('✅ Display panel updated and shown by NEXUS')
           } catch (e) {
             console.error('❌ Could not parse NEXUS display data:', e)
             console.log('Raw display match:', displayMatch[1])
@@ -318,6 +320,7 @@ const BusinessBrainWorkspaceClean: React.FC = () => {
                         }]
                       }
                     })
+                    setShowDisplayPanel(true)
                   }}>🧪 Test NEXUS Chart Control</div>
                 </div>
                 <div className="example-category">
@@ -339,6 +342,7 @@ const BusinessBrainWorkspaceClean: React.FC = () => {
                         ]
                       }
                     })
+                    setShowDisplayPanel(true)
                   }}>🧪 Test NEXUS Table Control</div>
                 </div>
                 <div className="example-category">
@@ -360,6 +364,7 @@ const BusinessBrainWorkspaceClean: React.FC = () => {
                         { name: 'notes', type: 'textarea', label: 'Additional Notes' }
                       ]
                     })
+                    setShowDisplayPanel(true)
                   }}>🧪 Test NEXUS Form Control</div>
                 </div>
               </div>
@@ -613,11 +618,26 @@ const BusinessBrainWorkspaceClean: React.FC = () => {
       </div>
 
       {/* Main Content */}
-      <div className="brain-content">
-        {/* AI Display Panel */}
-        <div className="ai-display-panel">
-          {renderAIDisplayContent()}
-        </div>
+      <div className={`brain-content ${showDisplayPanel ? 'with-display' : 'chat-only'}`}>
+        {/* AI Display Panel - Only show when NEXUS wants to use it */}
+        {showDisplayPanel && (
+          <div className="ai-display-panel">
+            <div className="display-panel-header">
+              <div className="panel-title">
+                <div className="nexus-indicator"></div>
+                <span>NEXUS Display</span>
+              </div>
+              <button 
+                className="close-display-button"
+                onClick={() => setShowDisplayPanel(false)}
+                title="Hide Display Panel"
+              >
+                ✕
+              </button>
+            </div>
+            {renderAIDisplayContent()}
+          </div>
+        )}
 
         {/* Chat Panel */}
         <div className="chat-panel">
@@ -632,6 +652,15 @@ const BusinessBrainWorkspaceClean: React.FC = () => {
             <div className="ai-status">
               <span className="status-indicator online"></span>
               <span className="status-text">Online & Ready</span>
+              {!showDisplayPanel && (
+                <button 
+                  className="show-examples-button"
+                  onClick={() => setShowDisplayPanel(true)}
+                  title="Show NEXUS Display Examples"
+                >
+                  Show Examples
+                </button>
+              )}
             </div>
           </div>
           

@@ -173,10 +173,20 @@
 .brain-content {
   flex: 1;
   display: grid;
-  grid-template-columns: 1fr 400px;
   gap: var(--nexus-space-lg);
   padding: var(--nexus-space-lg);
   overflow: hidden;
+  transition: var(--nexus-transition);
+}
+
+/* Chat-only layout (default) */
+.brain-content.chat-only {
+  grid-template-columns: 1fr;
+}
+
+/* With display panel layout */
+.brain-content.with-display {
+  grid-template-columns: 1fr 450px;
 }
 
 /* ============================================================================
@@ -190,6 +200,64 @@
   overflow: hidden;
   display: flex;
   flex-direction: column;
+  animation: slideInRight 0.3s ease-out;
+}
+
+@keyframes slideInRight {
+  from {
+    opacity: 0;
+    transform: translateX(30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+.display-panel-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: var(--nexus-space-lg);
+  background: var(--nexus-gray-50);
+  border-bottom: 1px solid var(--nexus-gray-200);
+}
+
+.panel-title {
+  display: flex;
+  align-items: center;
+  gap: var(--nexus-space-sm);
+  font-weight: 600;
+  color: var(--nexus-gray-900);
+}
+
+.nexus-indicator {
+  width: 12px;
+  height: 12px;
+  background: var(--nexus-accent);
+  border-radius: 50%;
+  animation: pulse 2s infinite;
+}
+
+.close-display-button {
+  width: 32px;
+  height: 32px;
+  border: none;
+  background: var(--nexus-gray-200);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: var(--nexus-transition);
+  color: var(--nexus-gray-600);
+  font-size: 1rem;
+}
+
+.close-display-button:hover {
+  background: var(--nexus-gray-300);
+  color: var(--nexus-gray-900);
+  transform: scale(1.05);
 }
 
 .ai-display-empty {
@@ -394,6 +462,24 @@
   display: flex;
   align-items: center;
   gap: var(--nexus-space-sm);
+}
+
+.show-examples-button {
+  padding: var(--nexus-space-xs) var(--nexus-space-sm);
+  background: var(--nexus-accent);
+  color: var(--nexus-white);
+  border: none;
+  border-radius: var(--nexus-radius-sm);
+  font-size: 0.75rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: var(--nexus-transition);
+  margin-left: var(--nexus-space-sm);
+}
+
+.show-examples-button:hover {
+  background: var(--nexus-accent-light);
+  transform: translateY(-1px);
 }
 
 .status-indicator {
@@ -821,15 +907,19 @@
    RESPONSIVE DESIGN
    ============================================================================ */
 @media (max-width: 1200px) {
-  .brain-content {
+  .brain-content.with-display {
     grid-template-columns: 1fr 350px;
   }
 }
 
 @media (max-width: 768px) {
-  .brain-content {
+  .brain-content.with-display {
     grid-template-columns: 1fr;
     grid-template-rows: 300px 1fr;
+  }
+  
+  .brain-content.chat-only {
+    grid-template-columns: 1fr;
   }
   
   .brain-header {
@@ -847,6 +937,21 @@
   
   .logo-text h1 {
     font-size: 1.5rem;
+  }
+  
+  .ai-display-panel {
+    animation: slideInUp 0.3s ease-out;
+  }
+  
+  @keyframes slideInUp {
+    from {
+      opacity: 0;
+      transform: translateY(30px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
   }
 }
 
